@@ -616,14 +616,14 @@ OIDC.getValidIdToken = function()
     var url = window.location.href;
 
     // Check if there was an error parameter
-    var error = url.match('error=([^&]*)')
+    var error = url.match('[?&]error=([^&]*)')
     if (error) {
         // If so, extract the error description and display it
-        var description = url.match('error_description=([^&]*)');
+        var description = url.match('[?&]error_description=([^&]*)');
         throw new OidcException(error[1] + ' Description: ' + description[1]);
     }
     // Exract state from the state parameter
-    var smatch = url.match('state=([^&]*)');
+    var smatch = url.match('[?&]state=([^&]*)');
     if (smatch) {
         var state = smatch[1] ;
         var sstate = sessionStorage['state'];
@@ -631,7 +631,7 @@ OIDC.getValidIdToken = function()
     }
 
     // Extract id token from the id_token parameter
-    var match = url.match('id_token=([^&]*)');
+    var match = url.match('[?&]id_token=([^&]*)');
     if (badstate) {
         throw new OidcException("State mismatch");
     } else if (match) {
@@ -662,7 +662,7 @@ OIDC.getAccessToken = function()
     var url = window.location.href;
 
     // Check for token
-    var token = url.match('access_token=([^&]*)');
+    var token = url.match('[?&]access_token=([^&]*)');
     if (token)
         return token[1];
     else
@@ -680,7 +680,7 @@ OIDC.getCode = function()
     var url = window.location.href;
 
     // Check for code
-    var code = url.match('code=([^(&)]*)');
+    var code = url.match('[?&]code=([^(&)]*)');
     if (code) {
         return code[1];
     }
