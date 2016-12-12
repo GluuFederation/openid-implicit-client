@@ -1,0 +1,32 @@
+<HTML>
+    <HEAD>
+        <script src="./openidconnect.js">
+        </script>
+
+        <script>
+            OIDC.restoreInfo();
+            var id_token = OIDC.getValidIdToken();
+            var claims_map = JSON.parse(OIDC.getIdTokenParts(id_token)[1]);
+            claims_string = '<table>';
+            for (var claim in claims_map){
+               claims_string = claims_string + '\n<TR><TD>' + claim + '</TD><TD>' + claims_map[claim] + '</TD></TR>';
+            }
+            claims_string = claims_string = claims_string + '\n</table>';
+
+            function print_id_token(){
+                document.getElementById("id_token").innerHTML = claims_string;
+            }
+        </script>
+    </HEAD>
+
+    <BODY onload="print_id_token();">
+
+    <h1>Implicit Flow Test Callback</h1>
+
+    <b>id_token</b>
+    <div id="id_token">
+        id_token claims not found.
+    </div>
+
+    </BODY>
+</HTML>

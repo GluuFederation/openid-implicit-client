@@ -1,0 +1,35 @@
+<HTML>
+    <HEAD>
+        <script src="./openidconnect.js">
+        </script>
+
+        <script>
+            var clientInfo = {
+                client_id : '(your-client-id)',
+                redirect_uri : 'https://(hostname)/login-callback.html'
+            };
+            OIDC.setClientInfo( clientInfo );
+            var providerInfo = OIDC.discover('https://albacore.gluu.info');
+            OIDC.setProviderInfo( providerInfo );
+            OIDC.storeInfo(providerInfo, clientInfo);
+
+            // Remove State and Nonce from previous session
+            sessionStorage.removeItem('state');
+            sessionStorage.removeItem('nonce');
+        </script>
+
+    </HEAD>
+
+    <BODY>
+
+        <h1>Implicit Flow Test Login Page</h1>
+
+        Click button to login! &nbsp; &nbsp;
+
+<button onClick="OIDC.login( {scope : 'openid profile email',
+                              response_type : 'token id_token'} );"
+        class="float-left submit-button" >Authenticate</button>
+
+    </BODY>
+
+</HTML>
