@@ -3353,7 +3353,493 @@ var rng_state;var rng_pool;var rng_pptr;function rng_seed_int(a){rng_pool[rng_pp
 /*! Mike Samuel (c) 2009 | code.google.com/p/json-sans-eval
  */
 var jsonParse=(function(){var e="(?:-?\\b(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\\b)";var j='(?:[^\\0-\\x08\\x0a-\\x1f"\\\\]|\\\\(?:["/\\\\bfnrt]|u[0-9A-Fa-f]{4}))';var i='(?:"'+j+'*")';var d=new RegExp("(?:false|true|null|[\\{\\}\\[\\]]|"+e+"|"+i+")","g");var k=new RegExp("\\\\(?:([^u])|u(.{4}))","g");var g={'"':'"',"/":"/","\\":"\\",b:"\b",f:"\f",n:"\n",r:"\r",t:"\t"};function h(l,m,n){return m?g[m]:String.fromCharCode(parseInt(n,16))}var c=new String("");var a="\\";var f={"{":Object,"[":Array};var b=Object.hasOwnProperty;return function(u,q){var p=u.match(d);var x;var v=p[0];var l=false;if("{"===v){x={}}else{if("["===v){x=[]}else{x=[];l=true}}var t;var r=[x];for(var o=1-l,m=p.length;o<m;++o){v=p[o];var w;switch(v.charCodeAt(0)){default:w=r[0];w[t||w.length]=+(v);t=void 0;break;case 34:v=v.substring(1,v.length-1);if(v.indexOf(a)!==-1){v=v.replace(k,h)}w=r[0];if(!t){if(w instanceof Array){t=w.length}else{t=v||c;break}}w[t]=v;t=void 0;break;case 91:w=r[0];r.unshift(w[t||w.length]=[]);t=void 0;break;case 93:r.shift();break;case 102:w=r[0];w[t||w.length]=false;t=void 0;break;case 110:w=r[0];w[t||w.length]=null;t=void 0;break;case 116:w=r[0];w[t||w.length]=true;t=void 0;break;case 123:w=r[0];r.unshift(w[t||w.length]={});t=void 0;break;case 125:r.shift();break}}if(l){if(r.length!==1){throw new Error()}x=x[0]}else{if(r.length){throw new Error()}}if(q){var s=function(C,B){var D=C[B];if(D&&typeof D==="object"){var n=null;for(var z in D){if(b.call(D,z)&&D!==C){var y=s(D,z);if(y!==void 0){D[z]=y}else{if(!n){n=[]}n.push(z)}}}if(n){for(var A=n.length;--A>=0;){delete D[n[A]]}}}return q.call(C,B,D)};x=s({"":x},"")}return x}})();
-/* jws-3.2.min.js  */
-/*! jws-3.2.2 (c) 2013-2015 Kenji Urushima | kjur.github.com/jsjws/license
+/* jws-3.3.min.js  */
+/*! jws-3.3.5 (c) 2013-2016 Kenji Urushima | kjur.github.com/jsrsasign/license
  */
-if(typeof KJUR=="undefined"||!KJUR){KJUR={}}if(typeof KJUR.jws=="undefined"||!KJUR.jws){KJUR.jws={}}KJUR.jws.JWS=function(){var i=KJUR.jws.JWS;this.parseJWS=function(o,q){if((this.parsedJWS!==undefined)&&(q||(this.parsedJWS.sigvalH!==undefined))){return}if(o.match(/^([^.]+)\.([^.]+)\.([^.]+)$/)==null){throw"JWS signature is not a form of 'Head.Payload.SigValue'."}var r=RegExp.$1;var m=RegExp.$2;var s=RegExp.$3;var u=r+"."+m;this.parsedJWS={};this.parsedJWS.headB64U=r;this.parsedJWS.payloadB64U=m;this.parsedJWS.sigvalB64U=s;this.parsedJWS.si=u;if(!q){var p=b64utohex(s);var n=parseBigInt(p,16);this.parsedJWS.sigvalH=p;this.parsedJWS.sigvalBI=n}var l=b64utoutf8(r);var t=b64utoutf8(m);this.parsedJWS.headS=l;this.parsedJWS.payloadS=t;if(!i.isSafeJSONString(l,this.parsedJWS,"headP")){throw"malformed JSON string for JWS Head: "+l}};function b(m,l){return utf8tob64u(m)+"."+utf8tob64u(l)}function f(n,m){var l=function(o){return KJUR.crypto.Util.hashString(o,m)};if(l==null){throw"hash function not defined in jsrsasign: "+m}return l(n)}function h(r,o,l,p,n){var q=b(r,o);var m=parseBigInt(l,16);return _rsasign_verifySignatureWithArgs(q,m,p,n)}this.verifyJWSByNE=function(n,m,l){this.parseJWS(n);return _rsasign_verifySignatureWithArgs(this.parsedJWS.si,this.parsedJWS.sigvalBI,m,l)};this.verifyJWSByKey=function(o,n){this.parseJWS(o);var l=c(this.parsedJWS.headP);var m=this.parsedJWS.headP.alg.substr(0,2)=="PS";if(n.hashAndVerify){return n.hashAndVerify(l,new Buffer(this.parsedJWS.si,"utf8").toString("base64"),b64utob64(this.parsedJWS.sigvalB64U),"base64",m)}else{if(m){return n.verifyStringPSS(this.parsedJWS.si,this.parsedJWS.sigvalH,l)}else{return n.verifyString(this.parsedJWS.si,this.parsedJWS.sigvalH)}}};this.verifyJWSByPemX509Cert=function(n,l){this.parseJWS(n);var m=new X509();m.readCertPEM(l);return m.subjectPublicKeyRSA.verifyString(this.parsedJWS.si,this.parsedJWS.sigvalH)};function c(m){var n=m.alg;var l="";if(n!="RS256"&&n!="RS512"&&n!="PS256"&&n!="PS512"){throw"JWS signature algorithm not supported: "+n}if(n.substr(2)=="256"){l="sha256"}if(n.substr(2)=="512"){l="sha512"}return l}function e(l){return c(jsonParse(l))}function k(l,q,t,n,r,s){var o=new RSAKey();o.setPrivate(n,r,s);var m=e(l);var p=o.signString(t,m);return p}function j(r,q,p,o,n){var l=null;if(typeof n=="undefined"){l=e(r)}else{l=c(n)}var m=n.alg.substr(0,2)=="PS";if(o.hashAndSign){return b64tob64u(o.hashAndSign(l,p,"binary","base64",m))}else{if(m){return hextob64u(o.signStringPSS(p,l))}else{return hextob64u(o.signString(p,l))}}}function g(q,n,p,m,o){var l=b(q,n);return k(q,n,l,p,m,o)}this.generateJWSByNED=function(s,o,r,n,q){if(!i.isSafeJSONString(s)){throw"JWS Head is not safe JSON string: "+s}var m=b(s,o);var p=k(s,o,m,r,n,q);var l=hextob64u(p);this.parsedJWS={};this.parsedJWS.headB64U=m.split(".")[0];this.parsedJWS.payloadB64U=m.split(".")[1];this.parsedJWS.sigvalB64U=l;return m+"."+l};this.generateJWSByKey=function(q,o,l){var p={};if(!i.isSafeJSONString(q,p,"headP")){throw"JWS Head is not safe JSON string: "+q}var n=b(q,o);var m=j(q,o,n,l,p.headP);this.parsedJWS={};this.parsedJWS.headB64U=n.split(".")[0];this.parsedJWS.payloadB64U=n.split(".")[1];this.parsedJWS.sigvalB64U=m;return n+"."+m};function d(r,q,p,m){var o=new RSAKey();o.readPrivateKeyFromPEMString(m);var l=e(r);var n=o.signString(p,l);return n}this.generateJWSByP1PrvKey=function(q,o,l){if(!i.isSafeJSONString(q)){throw"JWS Head is not safe JSON string: "+q}var n=b(q,o);var p=d(q,o,n,l);var m=hextob64u(p);this.parsedJWS={};this.parsedJWS.headB64U=n.split(".")[0];this.parsedJWS.payloadB64U=n.split(".")[1];this.parsedJWS.sigvalB64U=m;return n+"."+m}};KJUR.jws.JWS.sign=function(b,p,i,l,k){var j=KJUR.jws.JWS;if(!j.isSafeJSONString(p)){throw"JWS Head is not safe JSON string: "+p}var e=j.readSafeJSONString(p);if((b==""||b==null)&&e.alg!==undefined){b=e.alg}if((b!=""&&b!=null)&&e.alg===undefined){e.alg=b;p=JSON.stringify(e)}var d=null;if(j.jwsalg2sigalg[b]===undefined){throw"unsupported alg name: "+b}else{d=j.jwsalg2sigalg[b]}var c=utf8tob64u(p);var g=utf8tob64u(i);var n=c+"."+g;var m="";if(d.substr(0,4)=="Hmac"){if(l===undefined){throw"hexadecimal key shall be specified for HMAC"}var h=new KJUR.crypto.Mac({alg:d,pass:hextorstr(l)});h.updateString(n);m=h.doFinal()}else{if(d.indexOf("withECDSA")!=-1){var o=new KJUR.crypto.Signature({alg:d});o.init(l,k);o.updateString(n);hASN1Sig=o.sign();m=KJUR.crypto.ECDSA.asn1SigToConcatSig(hASN1Sig)}else{if(d!="none"){var o=new KJUR.crypto.Signature({alg:d});o.init(l,k);o.updateString(n);m=o.sign()}}}var f=hextob64u(m);return n+"."+f};KJUR.jws.JWS.verify=function(o,s,j){var l=KJUR.jws.JWS;var p=o.split(".");var d=p[0];var k=p[1];var b=d+"."+k;var q=b64utohex(p[2]);var i=l.readSafeJSONString(b64utoutf8(p[0]));var h=null;var r=null;if(i.alg===undefined){throw"algorithm not specified in header"}else{h=i.alg;r=h.substr(0,2)}if(j!=null&&Object.prototype.toString.call(j)==="[object Array]"&&j.length>0){var c=":"+j.join(":")+":";if(c.indexOf(":"+h+":")==-1){throw"algorithm '"+h+"' not accepted in the list"}}if(h!="none"&&s===null){throw"key shall be specified to verify."}if(r=="HS"){if(typeof s!="string"&&s.length!=0&&s.length%2!=0&&!s.match(/^[0-9A-Fa-f]+/)){throw"key shall be a hexadecimal str for HS* algs"}}if(typeof s=="string"&&s.indexOf("-----BEGIN ")!=-1){s=KEYUTIL.getKey(s)}if(r=="RS"||r=="PS"){if(!(s instanceof RSAKey)){throw"key shall be a RSAKey obj for RS* and PS* algs"}}if(r=="ES"){if(!(s instanceof KJUR.crypto.ECDSA)){throw"key shall be a ECDSA obj for ES* algs"}}if(h=="none"){}var m=null;if(l.jwsalg2sigalg[i.alg]===undefined){throw"unsupported alg name: "+h}else{m=l.jwsalg2sigalg[h]}if(m=="none"){throw"not supported"}else{if(m.substr(0,4)=="Hmac"){if(s===undefined){throw"hexadecimal key shall be specified for HMAC"}var g=new KJUR.crypto.Mac({alg:m,pass:hextorstr(s)});g.updateString(b);hSig2=g.doFinal();return q==hSig2}else{if(m.indexOf("withECDSA")!=-1){var f=null;try{f=KJUR.crypto.ECDSA.concatSigToASN1Sig(q)}catch(n){return false}var e=new KJUR.crypto.Signature({alg:m});e.init(s);e.updateString(b);return e.verify(f)}else{var e=new KJUR.crypto.Signature({alg:m});e.init(s);e.updateString(b);return e.verify(q)}}}};KJUR.jws.JWS.jwsalg2sigalg={HS256:"HmacSHA256",HS384:"HmacSHA384",HS512:"HmacSHA512",RS256:"SHA256withRSA",RS384:"SHA384withRSA",RS512:"SHA512withRSA",ES256:"SHA256withECDSA",ES384:"SHA384withECDSA",PS256:"SHA256withRSAandMGF1",PS384:"SHA384withRSAandMGF1",PS512:"SHA512withRSAandMGF1",none:"none",};KJUR.jws.JWS.isSafeJSONString=function(d,c,e){var f=null;try{f=jsonParse(d);if(typeof f!="object"){return 0}if(f.constructor===Array){return 0}if(c){c[e]=f}return 1}catch(b){return 0}};KJUR.jws.JWS.readSafeJSONString=function(c){var d=null;try{d=jsonParse(c);if(typeof d!="object"){return null}if(d.constructor===Array){return null}return d}catch(b){return null}};KJUR.jws.JWS.getEncodedSignatureValueFromJWS=function(b){if(b.match(/^[^.]+\.[^.]+\.([^.]+)$/)==null){throw"JWS signature is not a form of 'Head.Payload.SigValue'."}return RegExp.$1};KJUR.jws.IntDate=function(){};KJUR.jws.IntDate.get=function(b){if(b=="now"){return KJUR.jws.IntDate.getNow()}else{if(b=="now + 1hour"){return KJUR.jws.IntDate.getNow()+60*60}else{if(b=="now + 1day"){return KJUR.jws.IntDate.getNow()+60*60*24}else{if(b=="now + 1month"){return KJUR.jws.IntDate.getNow()+60*60*24*30}else{if(b=="now + 1year"){return KJUR.jws.IntDate.getNow()+60*60*24*365}else{if(b.match(/Z$/)){return KJUR.jws.IntDate.getZulu(b)}else{if(b.match(/^[0-9]+$/)){return parseInt(b)}}}}}}}throw"unsupported format: "+b};KJUR.jws.IntDate.getZulu=function(h){if(a=h.match(/(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)Z/)){var g=parseInt(RegExp.$1);var i=parseInt(RegExp.$2)-1;var c=parseInt(RegExp.$3);var b=parseInt(RegExp.$4);var e=parseInt(RegExp.$5);var f=parseInt(RegExp.$6);var j=new Date(Date.UTC(g,i,c,b,e,f));return ~~(j/1000)}throw"unsupported format: "+h};KJUR.jws.IntDate.getNow=function(){var b=~~(new Date()/1000);return b};KJUR.jws.IntDate.intDate2UTCString=function(b){var c=new Date(b*1000);return c.toUTCString()};KJUR.jws.IntDate.intDate2Zulu=function(f){var j=new Date(f*1000);var i=("0000"+j.getUTCFullYear()).slice(-4);var h=("00"+(j.getUTCMonth()+1)).slice(-2);var c=("00"+j.getUTCDate()).slice(-2);var b=("00"+j.getUTCHours()).slice(-2);var e=("00"+j.getUTCMinutes()).slice(-2);var g=("00"+j.getUTCSeconds()).slice(-2);return i+h+c+b+e+g+"Z"};
+ if (typeof KJUR == "undefined" || !KJUR) KJUR = {};
+
+ if (typeof KJUR.jws == "undefined" || !KJUR.jws) KJUR.jws = {};
+
+ KJUR.jws.JWS = function() {
+     var ns1 = KJUR.jws.JWS;
+
+
+     this.parseJWS = function(sJWS, sigValNotNeeded) {
+ 	if ((this.parsedJWS !== undefined) &&
+ 	    (sigValNotNeeded || (this.parsedJWS.sigvalH !== undefined))) {
+ 	    return;
+ 	}
+     var matchResult = sJWS.match(/^([^.]+)\.([^.]+)\.([^.]+)$/);
+ 	if (matchResult == null) {
+ 	    throw "JWS signature is not a form of 'Head.Payload.SigValue'.";
+ 	}
+ 	var b6Head = matchResult[1];
+ 	var b6Payload = matchResult[2];
+ 	var b6SigVal = matchResult[3];
+ 	var sSI = b6Head + "." + b6Payload;
+ 	this.parsedJWS = {};
+ 	this.parsedJWS.headB64U = b6Head;
+ 	this.parsedJWS.payloadB64U = b6Payload;
+ 	this.parsedJWS.sigvalB64U = b6SigVal;
+ 	this.parsedJWS.si = sSI;
+
+ 	if (!sigValNotNeeded) {
+ 	    var hSigVal = b64utohex(b6SigVal);
+ 	    var biSigVal = parseBigInt(hSigVal, 16);
+ 	    this.parsedJWS.sigvalH = hSigVal;
+ 	    this.parsedJWS.sigvalBI = biSigVal;
+ 	}
+
+ 	var sHead = b64utoutf8(b6Head);
+ 	var sPayload = b64utoutf8(b6Payload);
+ 	this.parsedJWS.headS = sHead;
+ 	this.parsedJWS.payloadS = sPayload;
+
+ 	if (! ns1.isSafeJSONString(sHead, this.parsedJWS, 'headP'))
+ 	    throw "malformed JSON string for JWS Head: " + sHead;
+     };
+ };
+
+
+ KJUR.jws.JWS.sign = function(alg, spHeader, spPayload, key, pass) {
+     var ns1 = KJUR.jws.JWS;
+     var sHeader, pHeader, sPayload;
+
+     if (typeof spHeader != 'string' && typeof spHeader != 'object')
+ 	throw "spHeader must be JSON string or object: " + spHeader;
+
+     if (typeof spHeader == 'object') {
+ 	pHeader = spHeader;
+ 	sHeader = JSON.stringify(pHeader);
+     }
+
+     if (typeof spHeader == 'string') {
+ 	sHeader = spHeader;
+ 	if (! ns1.isSafeJSONString(sHeader))
+ 	    throw "JWS Head is not safe JSON string: " + sHeader;
+ 	pHeader = ns1.readSafeJSONString(sHeader);
+
+     }
+
+     sPayload = spPayload;
+     if (typeof spPayload == 'object') sPayload = JSON.stringify(spPayload);
+
+     if ((alg == '' || alg == null) &&
+ 	pHeader['alg'] !== undefined) {
+ 	alg = pHeader['alg'];
+     }
+
+     if ((alg != '' && alg != null) &&
+ 	pHeader['alg'] === undefined) {
+ 	pHeader['alg'] = alg;
+ 	sHeader = JSON.stringify(pHeader);
+     }
+
+     if (alg !== pHeader.alg)
+ 	throw "alg and sHeader.alg doesn't match: " + alg + "!=" + pHeader.alg;
+
+     var sigAlg = null;
+     if (ns1.jwsalg2sigalg[alg] === undefined) {
+ 	throw "unsupported alg name: " + alg;
+     } else {
+ 	sigAlg = ns1.jwsalg2sigalg[alg];
+     }
+
+     var uHeader = utf8tob64u(sHeader);
+     var uPayload = utf8tob64u(sPayload);
+     var uSignatureInput = uHeader + "." + uPayload
+     var hSig = "";
+     if (sigAlg.substr(0, 4) == "Hmac") {
+ 	if (key === undefined)
+ 	    throw "mac key shall be specified for HS* alg";
+ 	var mac = new KJUR.crypto.Mac({'alg': sigAlg, 'prov': 'cryptojs', 'pass': key});
+ 	mac.updateString(uSignatureInput);
+ 	hSig = mac.doFinal();
+     } else if (sigAlg.indexOf("withECDSA") != -1) {
+ 	var sig = new KJUR.crypto.Signature({'alg': sigAlg});
+ 	sig.init(key, pass);
+ 	sig.updateString(uSignatureInput);
+ 	hASN1Sig = sig.sign();
+ 	hSig = KJUR.crypto.ECDSA.asn1SigToConcatSig(hASN1Sig);
+     } else if (sigAlg != "none") {
+ 	var sig = new KJUR.crypto.Signature({'alg': sigAlg});
+ 	sig.init(key, pass);
+ 	sig.updateString(uSignatureInput);
+ 	hSig = sig.sign();
+     }
+
+     var uSig = hextob64u(hSig);
+     return uSignatureInput + "." + uSig;
+ };
+
+ KJUR.jws.JWS.verify = function(sJWS, key, acceptAlgs) {
+     var jws = KJUR.jws.JWS;
+     var a = sJWS.split(".");
+     var uHeader = a[0];
+     var uPayload = a[1];
+     var uSignatureInput = uHeader + "." + uPayload;
+     var hSig = b64utohex(a[2]);
+
+     var pHeader = jws.readSafeJSONString(b64utoutf8(a[0]));
+     var alg = null;
+     var algType = null;
+     if (pHeader.alg === undefined) {
+ 	throw "algorithm not specified in header";
+     } else {
+ 	alg = pHeader.alg;
+ 	algType = alg.substr(0, 2);
+     }
+
+     if (acceptAlgs != null &&
+         Object.prototype.toString.call(acceptAlgs) === '[object Array]' &&
+         acceptAlgs.length > 0) {
+ 	var acceptAlgStr = ":" + acceptAlgs.join(":") + ":";
+ 	if (acceptAlgStr.indexOf(":" + alg + ":") == -1) {
+ 	    throw "algorithm '" + alg + "' not accepted in the list";
+ 	}
+     }
+
+     if (alg != "none" && key === null) {
+ 	throw "key shall be specified to verify.";
+     }
+
+
+     if (typeof key == "string" &&
+ 	key.indexOf("-----BEGIN ") != -1) {
+ 	key = KEYUTIL.getKey(key);
+     }
+
+     if (algType == "RS" || algType == "PS") {
+ 	if (!(key instanceof RSAKey)) {
+ 	    throw "key shall be a RSAKey obj for RS* and PS* algs";
+ 	}
+     }
+
+     if (algType == "ES") {
+ 	if (!(key instanceof KJUR.crypto.ECDSA)) {
+ 	    throw "key shall be a ECDSA obj for ES* algs";
+ 	}
+     }
+
+     if (alg == "none") {
+     }
+
+     var sigAlg = null;
+     if (jws.jwsalg2sigalg[pHeader.alg] === undefined) {
+ 	throw "unsupported alg name: " + alg;
+     } else {
+ 	sigAlg = jws.jwsalg2sigalg[alg];
+     }
+
+     if (sigAlg == "none") {
+         throw "not supported";
+     } else if (sigAlg.substr(0, 4) == "Hmac") {
+ 	var hSig2 = null;
+ 	if (key === undefined)
+ 	    throw "hexadecimal key shall be specified for HMAC";
+ 	    var mac = new KJUR.crypto.Mac({'alg': sigAlg, 'pass': key});
+ 	    mac.updateString(uSignatureInput);
+ 	    hSig2 = mac.doFinal();
+ 	return hSig == hSig2;
+     } else if (sigAlg.indexOf("withECDSA") != -1) {
+ 	var hASN1Sig = null;
+         try {
+ 	    hASN1Sig = KJUR.crypto.ECDSA.concatSigToASN1Sig(hSig);
+ 	} catch (ex) {
+ 	    return false;
+ 	}
+ 	var sig = new KJUR.crypto.Signature({'alg': sigAlg});
+ 	sig.init(key)
+ 	sig.updateString(uSignatureInput);
+ 	return sig.verify(hASN1Sig);
+     } else {
+ 	var sig = new KJUR.crypto.Signature({'alg': sigAlg});
+ 	sig.init(key)
+ 	sig.updateString(uSignatureInput);
+ 	return sig.verify(hSig);
+     }
+ };
+
+ KJUR.jws.JWS.parse = function(sJWS) {
+     var a = sJWS.split(".");
+     var result = {};
+     var uHeader, uPayload, uSig;
+     if (a.length != 2 && a.length != 3)
+ 	throw "malformed sJWS: wrong number of '.' splitted elements";
+
+     uHeader = a[0];
+     uPayload = a[1];
+     if (a.length == 3) uSig = a[2];
+
+     result.headerObj = KJUR.jws.JWS.readSafeJSONString(b64utoutf8(uHeader));
+     result.payloadObj = KJUR.jws.JWS.readSafeJSONString(b64utoutf8(uPayload));
+
+     result.headerPP = JSON.stringify(result.headerObj, null, "  ");
+     if (result.payloadObj == null) {
+ 	result.payloadPP = b64utoutf8(uPayload);
+     } else {
+ 	result.payloadPP = JSON.stringify(result.payloadObj, null, "  ");
+     }
+
+     if (uSig !== undefined) {
+ 	result.sigHex = b64utohex(uSig);
+     }
+
+     return result;
+ };
+
+ KJUR.jws.JWS.verifyJWT = function(sJWT, key, acceptField) {
+     var ns1 = KJUR.jws.JWS;
+
+     var a = sJWT.split(".");
+     var uHeader = a[0];
+     var uPayload = a[1];
+     var uSignatureInput = uHeader + "." + uPayload;
+     var hSig = b64utohex(a[2]);
+
+     var pHeader = ns1.readSafeJSONString(b64utoutf8(uHeader));
+
+     var pPayload = ns1.readSafeJSONString(b64utoutf8(uPayload));
+
+     if (pHeader.alg === undefined) return false;
+     if (acceptField.alg === undefined)
+ 	throw "acceptField.alg shall be specified";
+     if (! ns1.inArray(pHeader.alg, acceptField.alg)) return false;
+
+     if (pPayload.iss !== undefined && typeof acceptField.iss === "object") {
+ 	if (! ns1.inArray(pPayload.iss, acceptField.iss)) return false;
+     }
+
+     if (pPayload.sub !== undefined && typeof acceptField.sub === "object") {
+ 	if (! ns1.inArray(pPayload.sub, acceptField.sub)) return false;
+     }
+
+     if (pPayload.aud !== undefined && typeof acceptField.aud === "object") {
+ 	if (typeof pPayload.aud == "string") {
+ 	    if (! ns1.inArray(pPayload.aud, acceptField.aud))
+ 		return false;
+ 	} else if (typeof pPayload.aud == "object") {
+ 	    if (! ns1.includedArray(pPayload.aud, acceptField.aud))
+ 		return false;
+ 	}
+     }
+
+     var now = KJUR.jws.IntDate.getNow();
+     if (acceptField.verifyAt !== undefined && typeof acceptField.verifyAt === "number") {
+ 	now = acceptField.verifyAt;
+     }
+     if (acceptField.gracePeriod === undefined ||
+         typeof acceptField.gracePeriod !== "number") {
+ 	acceptField.gracePeriod = 0;
+     }
+
+     if (pPayload.exp !== undefined && typeof pPayload.exp == "number") {
+ 	if (pPayload.exp + acceptField.gracePeriod < now) return false;
+     }
+
+     if (pPayload.nbf !== undefined && typeof pPayload.nbf == "number") {
+ 	if (now < pPayload.nbf - acceptField.gracePeriod) return false;
+     }
+
+     if (pPayload.iat !== undefined && typeof pPayload.iat == "number") {
+ 	if (now < pPayload.iat - acceptField.gracePeriod) return false;
+     }
+
+     if (pPayload.jti !== undefined && acceptField.jti !== undefined) {
+       if (pPayload.jti !== acceptField.jti) return false;
+     }
+
+     if (! KJUR.jws.JWS.verify(sJWT, key, acceptField.alg)) return false;
+
+     return true;
+ };
+
+ KJUR.jws.JWS.includedArray = function(a1, a2) {
+     var inArray = KJUR.jws.JWS.inArray;
+     if (a1 === null) return false;
+     if (typeof a1 !== "object") return false;
+     if (typeof a1.length !== "number") return false;
+
+     for (var i = 0; i < a1.length; i++) {
+ 	if (! inArray(a1[i], a2)) return false;
+     }
+     return true;
+ };
+
+ KJUR.jws.JWS.inArray = function(item, a) {
+     if (a === null) return false;
+     if (typeof a !== "object") return false;
+     if (typeof a.length !== "number") return false;
+     for (var i = 0; i < a.length; i++) {
+ 	if (a[i] == item) return true;
+     }
+     return false;
+ };
+
+ KJUR.jws.JWS.jwsalg2sigalg = {
+     "HS256":	"HmacSHA256",
+     "HS384":	"HmacSHA384",
+     "HS512":	"HmacSHA512",
+     "RS256":	"SHA256withRSA",
+     "RS384":	"SHA384withRSA",
+     "RS512":	"SHA512withRSA",
+     "ES256":	"SHA256withECDSA",
+     "ES384":	"SHA384withECDSA",
+     "PS256":	"SHA256withRSAandMGF1",
+     "PS384":	"SHA384withRSAandMGF1",
+     "PS512":	"SHA512withRSAandMGF1",
+     "none":	"none",
+ };
+
+
+ KJUR.jws.JWS.isSafeJSONString = function(s, h, p) {
+     var o = null;
+     try {
+ 	o = jsonParse(s);
+ 	if (typeof o != "object") return 0;
+ 	if (o.constructor === Array) return 0;
+ 	if (h) h[p] = o;
+ 	return 1;
+     } catch (ex) {
+ 	return 0;
+     }
+ };
+
+ KJUR.jws.JWS.readSafeJSONString = function(s) {
+     var o = null;
+     try {
+ 	o = jsonParse(s);
+ 	if (typeof o != "object") return null;
+ 	if (o.constructor === Array) return null;
+ 	return o;
+     } catch (ex) {
+ 	return null;
+     }
+ };
+
+ KJUR.jws.JWS.getEncodedSignatureValueFromJWS = function(sJWS) {
+     var matchResult = sJWS.match(/^[^.]+\.[^.]+\.([^.]+)$/);
+     if (matchResult == null) {
+ 	throw "JWS signature is not a form of 'Head.Payload.SigValue'.";
+     }
+     return matchResult[1];
+ };
+
+ KJUR.jws.JWS.getJWKthumbprint = function(o) {
+     if (o.kty !== "RSA" &&
+ 	o.kty !== "EC" &&
+ 	o.kty !== "oct")
+ 	throw "unsupported algorithm for JWK Thumprint";
+
+     var s = '{';
+     if (o.kty === "RSA") {
+ 	if (typeof o.n != "string" || typeof o.e != "string")
+ 	    throw "wrong n and e value for RSA key";
+ 	s += '"' + 'e' + '":"' + o.e + '",';
+ 	s += '"' + 'kty' + '":"' + o.kty + '",';
+ 	s += '"' + 'n' + '":"' + o.n + '"}';
+     } else if (o.kty === "EC") {
+ 	if (typeof o.crv != "string" ||
+ 	    typeof o.x != "string" ||
+ 	    typeof o.y != "string")
+ 	    throw "wrong crv, x and y value for EC key";
+ 	s += '"' + 'crv' + '":"' + o.crv + '",';
+ 	s += '"' + 'kty' + '":"' + o.kty + '",';
+ 	s += '"' + 'x' + '":"' + o.x + '",';
+ 	s += '"' + 'y' + '":"' + o.y + '"}';
+     } else if (o.kty === "oct") {
+ 	if (typeof o.k != "string")
+ 	    throw "wrong k value for oct(symmetric) key";
+ 	s += '"' + 'kty' + '":"' + o.kty + '",';
+ 	s += '"' + 'k' + '":"' + o.k + '"}';
+     }
+
+     var hJWK = rstrtohex(s);
+     var hash = KJUR.crypto.Util.hashHex(hJWK, "sha256");
+     var hashB64U = hextob64u(hash);
+
+     return hashB64U;
+ };
+
+ KJUR.jws.IntDate = {};
+
+ KJUR.jws.IntDate.get = function(s) {
+     if (s == "now") {
+ 	return KJUR.jws.IntDate.getNow();
+     } else if (s == "now + 1hour") {
+ 	return KJUR.jws.IntDate.getNow() + 60 * 60;
+     } else if (s == "now + 1day") {
+ 	return KJUR.jws.IntDate.getNow() + 60 * 60 * 24;
+     } else if (s == "now + 1month") {
+ 	return KJUR.jws.IntDate.getNow() + 60 * 60 * 24 * 30;
+     } else if (s == "now + 1year") {
+ 	return KJUR.jws.IntDate.getNow() + 60 * 60 * 24 * 365;
+     } else if (s.match(/Z$/)) {
+ 	return KJUR.jws.IntDate.getZulu(s);
+     } else if (s.match(/^[0-9]+$/)) {
+ 	return parseInt(s);
+     }
+     throw "unsupported format: " + s;
+ };
+
+ KJUR.jws.IntDate.getZulu = function(s) {
+     var matchResult = s.match(/(\d+)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)Z/);
+     if (matchResult) {
+         var sYear = matchResult[1];
+ 	var year = parseInt(sYear);
+ 	if (sYear.length == 4) {
+         } else if (sYear.length == 2) {
+ 	    if (50 <= year && year < 100) {
+ 		year = 1900 + year;
+ 	    } else if (0 <= year && year < 50) {
+ 		year = 2000 + year;
+ 	    } else {
+ 		throw "malformed year string for UTCTime";
+ 	    }
+ 	} else {
+ 	    throw "malformed year string";
+ 	}
+ 	var month = parseInt(matchResult[2]) - 1;
+ 	var day = parseInt(matchResult[3]);
+ 	var hour = parseInt(matchResult[4]);
+ 	var min = parseInt(matchResult[5]);
+ 	var sec = parseInt(matchResult[6]);
+ 	var d = new Date(Date.UTC(year, month, day, hour, min, sec));
+ 	return ~~(d / 1000);
+     }
+     throw "unsupported format: " + s;
+ };
+
+ /**
+  * get UNIX origin time of current time
+  * @name getNow
+  * @memberOf KJUR.jws.IntDate
+  * @function
+  * @static
+  * @return {Integer} UNIX origin time for current time
+  * @since jws 3.0.1
+  * @description
+  * This method provides UNIX origin time for current time
+  * @example
+  * KJUR.jws.IntDate.getNow() => 1478...
+  */
+ KJUR.jws.IntDate.getNow = function() {
+     var d = ~~(new Date() / 1000);
+     return d;
+ };
+
+ KJUR.jws.IntDate.intDate2UTCString = function(intDate) {
+     var d = new Date(intDate * 1000);
+     return d.toUTCString();
+ };
+
+ KJUR.jws.IntDate.intDate2Zulu = function(intDate) {
+     var d = new Date(intDate * 1000);
+     var year = ("0000" + d.getUTCFullYear()).slice(-4);
+     var mon =  ("00" + (d.getUTCMonth() + 1)).slice(-2);
+     var day =  ("00" + d.getUTCDate()).slice(-2);
+     var hour = ("00" + d.getUTCHours()).slice(-2);
+     var min =  ("00" + d.getUTCMinutes()).slice(-2);
+     var sec =  ("00" + d.getUTCSeconds()).slice(-2);
+     return year + mon + day + hour + min + sec + "Z";
+ };
