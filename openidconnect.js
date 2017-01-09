@@ -590,11 +590,10 @@ OIDC.rsaVerifyJWS = function (jws, jwk)
 {
     if(jws && typeof jwk === 'object') {
         if(jwk['kty'] == 'RSA') {
-            var verifier = new KJUR.jws.JWS();
+            var verifier = KJUR.jws.JWS;
             if(jwk['n'] && jwk['e']) {
-                var keyN = b64utohex(jwk['n']);
-                var keyE = b64utohex(jwk['e']);
-                return verifier.verifyJWSByNE(jws, keyN, keyE);
+                var pubkey = KEYUTIL.getKey({ kty: 'RSA', n: jwk['n'], e: jwk['e'] })
+                return verifier.verify(jws, pubkey, ['RS256']);
             } else if (jwk['x5c']) {
                 return verifier.verifyJWSByPemX509Cert(jws, "-----BEGIN CERTIFICATE-----\n" + jwk['x5c'][0] + "\n-----END CERTIFICATE-----\n");
             }
