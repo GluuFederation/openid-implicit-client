@@ -641,7 +641,10 @@ OIDC.getValidIdToken = function()
         if (id_token) {
             var sigVerified = this.verifyIdTokenSig(id_token);
             var valid = this.isValidIdToken(id_token);
+            if(!valid) console.log("Id_token is not valid!");
+            if(!sigVerified) console.log("The signature of the id_token is not verified!");
             if(sigVerified && valid)
+                console.log("Id_token is valid and its signature is verified!");
                 return id_token;
         } else {
             throw new OidcException('Could not retrieve ID Token from the URL');
