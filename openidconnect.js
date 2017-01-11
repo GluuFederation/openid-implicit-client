@@ -314,6 +314,8 @@ OIDC.restoreInfo = function()
     if(clientInfo) {
         this.setClientInfo(JSON.parse(clientInfo));
     }
+    var debug = {provider: providerInfo, client: clientInfo};
+    console.log(debug);
 };
 
 /**
