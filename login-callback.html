@@ -6,6 +6,7 @@
         <script>
             OIDC.restoreInfo();
             var id_token = OIDC.getValidIdToken();
+            OIDC.debug(true, id_token);
             var claims_map = JSON.parse(OIDC.getIdTokenParts(id_token)[1]);
             claims_string = '<table>';
             for (var claim in claims_map){

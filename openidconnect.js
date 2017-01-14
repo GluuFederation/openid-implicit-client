@@ -260,6 +260,25 @@ OIDC.setClientInfo = function(p)
     return true;
 };
 
+/** OIDC.debug(toggle, id_token)
+    params: toggle - enable/disable debugging;
+            id_token - current session id_token;
+    Print provider information, client information and
+    results of id_token verification on console. */
+
+OIDC.debug = function (toggle, id_token)
+{
+  if (toggle == true){
+    var providerInfo = sessionStorage['providerInfo'];
+    var clientInfo = sessionStorage['clientInfo'];
+    var sigVerified = this.verifyIdTokenSig(id_token);
+    var valid = this.isValidIdToken(id_token);
+    console.log({provider: providerInfo, client: clientInfo});
+    if(!valid) console.log("Id_token is not valid!");
+    if(!sigVerified) console.log("The signature of the id_token is not verified!");
+    if(sigVerified && valid) console.log("Id_token is valid and its signature is verified!");
+  }
+}
 
 /**
  * Stores the Identity Provider and Client configuration options in the browser session storage for reuse later
@@ -314,8 +333,6 @@ OIDC.restoreInfo = function()
     if(clientInfo) {
         this.setClientInfo(JSON.parse(clientInfo));
     }
-    var debug = {provider: providerInfo, client: clientInfo};
-    console.log(debug);
 };
 
 /**
@@ -641,10 +658,7 @@ OIDC.getValidIdToken = function()
         if (id_token) {
             var sigVerified = this.verifyIdTokenSig(id_token);
             var valid = this.isValidIdToken(id_token);
-            if(!valid) console.log("Id_token is not valid!");
-            if(!sigVerified) console.log("The signature of the id_token is not verified!");
             if(sigVerified && valid)
-                console.log("Id_token is valid and its signature is verified!");
                 return id_token;
         } else {
             throw new OidcException('Could not retrieve ID Token from the URL');
