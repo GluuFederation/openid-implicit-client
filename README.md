@@ -20,31 +20,50 @@ so that you can put it into the cookie to handle the session.
 
 List of the Identity Provider's configuration parameters <br>
 
-**SupportedProviderOptions.issuer** (_string_) - Issuer ID <br>
-**SupportedProviderOptions.authorization_endpoint** (_string_) - Authorization Endpoint URL <br>
-**SupportedProviderOptions.jwks_uri** (_string_) - JWKS URL <br>
-**SupportedProviderOptions.claims_parameter_supported** (_boolean_) - Claims parameter support <br>
-**SupportedProviderOptions.request_parameter_supported** (_boolean_) - Request parameter support <br>
-**SupportedProviderOptions.jwks** (_object_) - Identity Provider's JWK Set <br>
+**supportedProviderOptions.issuer** (_string_) - Issuer ID <br>
+**supportedProviderOptions.authorization_endpoint** (_string_) - Authorization Endpoint URL <br>
+**supportedProviderOptions.jwks_uri** (_string_) - JWKS URL <br>
+**supportedProviderOptions.claims_parameter_supported** (_boolean_) - Claims parameter support <br>
+**supportedProviderOptions.request_parameter_supported** (_boolean_) - Request parameter support <br>
+**supportedProviderOptions.jwks** (_object_) - Identity Provider's JWK Set <br>
 
 ##### Supported Request Options
 
 Supported Login Request parameters <br>
 
-  **SupportedRequestOptions.scope** (_string_) - Space separated scope values<br>
-  **SupportedRequestOptions.response_type** (_string_) - Space separated response_type values<br>
-  **SupportedRequestOptions.display** (_string_) - Display<br>
-  **SupportedRequestOptions.max_age** (_string_) - Max_age<br>
-  **SupportedRequestOptions.claims** (_object_)  - Claims object containing what information to return in the UserInfo endpoint and ID Token<br>
-  **SupportedRequestOptions.claims.id_token** (_array_) - List of claims to return in the ID Token<br>
-  **SupportedRequestOptions.claims.userinfo** (_array_) - List of claims to return in the UserInfo endpoint<br>
-  **SupportedRequestOptions.request** (_boolean_) - Signed request object JWS. Not supported yet.<br>
+**supportedRequestOptions.scope** (_string_) - Space separated scope values<br>
+**supportedRequestOptions.response_type** (_string_) - Space separated response_type values<br>
+**supportedRequestOptions.display** (_string_) - Display<br>
+**supportedRequestOptions.max_age** (_string_) - Max_age<br>
+**supportedRequestOptions.claims** (_object_)  - Claims object containing what information to return in the UserInfo endpoint and ID Token<br>
+**supportedRequestOptions.claims.id_token** (_array_) - List of claims to return in the ID Token<br>
+**supportedRequestOptions.claims.userinfo** (_array_) - List of claims to return in the UserInfo endpoint<br>
+**supportedRequestOptions.request** (_boolean_) - Signed request object JWS. Not supported yet.<br>
 
 ##### Supported Client Options
 
-  List of supported Client configuration parameters <br>
+List of supported Client configuration parameters <br>
 
-  **SupportedClientOptions.client_id** (_string_) - The client's client_id <br>
-  **SupportedClientOptions.redirect_uri** (_string_) - The client's redirect_uri <br>
+**supportedClientOptions.client_id** (_string_) - The client's client_id <br>
+**supportedClientOptions.redirect_uri** (_string_) - The client's redirect_uri <br>
 
 ### OIDC Methods
+
+##### setProviderInfo(p)
+_p - The Identity Provider's configuration options described in supportedProviderOptions_ <br>
+
+Sets the Identity Provider's configuration parameters. It may be done declaring each parameter on code or using the returning information from OIDC.discover('https://op.example.com'). Returns a boolean value indicating the status of **(check what it would be returning)** <br>
+
+###### Example:
+    // set Identity Provider configuration
+    OIDC.setProviderInfo( {
+                          issuer: 'https:/op.example.com',
+                          authorization_endpoint: 'http://op.example.com/auth.html',
+                          jwks_uri: 'https://op.example.com/jwks'
+                       }
+                     );
+    // set Identity Provider configuration using discovery information
+    var discovery = OIDC.discover('https://op.example.com');
+    if(var)
+      OIDC.setProviderInfo(discovery);
+
