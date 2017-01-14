@@ -14,9 +14,9 @@ To use this library, include the `openidconnect.js` your HTML page.
 * In the callback page, callback.html, you will get ID Token back,
 so that you can put it into the cookie to handle the session.
 
-### OIDC Variables
+## OIDC Variables
 
-##### Supported Provider Options
+### Supported Provider Options
 
 List of the Identity Provider's configuration parameters <br>
 
@@ -27,7 +27,7 @@ List of the Identity Provider's configuration parameters <br>
 *supportedProviderOptions.request_parameter_supported* **(boolean)** - Request parameter support <br>
 *supportedProviderOptions.jwks* **(object)** - Identity Provider's JWK Set <br>
 
-##### Supported Request Options
+### Supported Request Options
 
 Supported Login Request parameters <br>
 
@@ -40,16 +40,16 @@ Supported Login Request parameters <br>
 *supportedRequestOptions.claims.userinfo* **(array)** - List of claims to return in the UserInfo endpoint<br>
 *supportedRequestOptions.request* **(boolean)** - Signed request object JWS. Not supported yet.<br>
 
-##### Supported Client Options
+### Supported Client Options
 
 List of supported Client configuration parameters <br>
 
 *supportedClientOptions.client_id* **(string)** - The client's client_id <br>
 *supportedClientOptions.redirect_uri* **(string)** - The client's redirect_uri <br>
 
-### OIDC Methods
+## OIDC Methods
 
-##### setProviderInfo(p)
+### setProviderInfo(p)
 _p - The Identity Provider's configuration options described in supportedProviderOptions_ <br>
 
 Sets the Identity Provider's configuration parameters. It may be done declaring each parameter on code or using the returning information from OIDC.discover('https://op.example.com'). Returns a boolean value indicating the status of **(check what it would be returning)** <br>
