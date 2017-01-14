@@ -20,32 +20,32 @@ so that you can put it into the cookie to handle the session.
 
 List of the Identity Provider's configuration parameters <br>
 
-**supportedProviderOptions.issuer** (_string_) - Issuer ID <br>
-**supportedProviderOptions.authorization_endpoint** (_string_) - Authorization Endpoint URL <br>
-**supportedProviderOptions.jwks_uri** (_string_) - JWKS URL <br>
-**supportedProviderOptions.claims_parameter_supported** (_boolean_) - Claims parameter support <br>
-**supportedProviderOptions.request_parameter_supported** (_boolean_) - Request parameter support <br>
-**supportedProviderOptions.jwks** (_object_) - Identity Provider's JWK Set <br>
+*supportedProviderOptions.issuer* **(string)** - Issuer ID <br>
+*supportedProviderOptions.authorization_endpoint* **(string)** - Authorization Endpoint URL <br>
+*supportedProviderOptions.jwks_uri* **(string)** - JWKS URL <br>
+*supportedProviderOptions.claims_parameter_supported* **(boolean)** - Claims parameter support <br>
+*supportedProviderOptions.request_parameter_supported* **(boolean)** - Request parameter support <br>
+*supportedProviderOptions.jwks* **(object)** - Identity Provider's JWK Set <br>
 
 ##### Supported Request Options
 
 Supported Login Request parameters <br>
 
-**supportedRequestOptions.scope** (_string_) - Space separated scope values<br>
-**supportedRequestOptions.response_type** (_string_) - Space separated response_type values<br>
-**supportedRequestOptions.display** (_string_) - Display<br>
-**supportedRequestOptions.max_age** (_string_) - Max_age<br>
-**supportedRequestOptions.claims** (_object_)  - Claims object containing what information to return in the UserInfo endpoint and ID Token<br>
-**supportedRequestOptions.claims.id_token** (_array_) - List of claims to return in the ID Token<br>
-**supportedRequestOptions.claims.userinfo** (_array_) - List of claims to return in the UserInfo endpoint<br>
-**supportedRequestOptions.request** (_boolean_) - Signed request object JWS. Not supported yet.<br>
+*supportedRequestOptions.scope* **(string)** - Space separated scope values<br>
+*supportedRequestOptions.response_type* **(string)** - Space separated response_type values<br>
+*supportedRequestOptions.display* **(string)** - Display<br>
+*supportedRequestOptions.max_age* **(string)** - Max_age<br>
+*supportedRequestOptions.claims* **(object)**  - Claims object containing what information to return in the UserInfo endpoint and ID Token<br>
+*supportedRequestOptions.claims.id_token* **(array)** - List of claims to return in the ID Token<br>
+*supportedRequestOptions.claims.userinfo* **(array)** - List of claims to return in the UserInfo endpoint<br>
+*supportedRequestOptions.request* **(boolean)** - Signed request object JWS. Not supported yet.<br>
 
 ##### Supported Client Options
 
 List of supported Client configuration parameters <br>
 
-**supportedClientOptions.client_id** (_string_) - The client's client_id <br>
-**supportedClientOptions.redirect_uri** (_string_) - The client's redirect_uri <br>
+*supportedClientOptions.client_id* **(string)** - The client's client_id <br>
+*supportedClientOptions.redirect_uri* **(string)** - The client's redirect_uri <br>
 
 ### OIDC Methods
 
