@@ -523,19 +523,19 @@ OIDC.login = function(reqOptions) {
  * Verifies the ID Token signature using the JWK Keyset from jwks or jwks_uri of the
  * Identity Provider Configuration options set via {@link OIDC.setProviderInfo}.
  * Supports only RSA signatures
- * @param {string }idtoken      - The ID Token string
+ * @param {string }id_token      - The ID Token string
  * @returns {boolean}           Indicates whether the signature is valid or not
  * @see OIDC.setProviderInfo
  * @throws {OidcException}
  */
-OIDC.verifyIdTokenSig = function (idtoken)
+OIDC.verifyIdTokenSig = function (id_token)
 {
     var verified = false;
     var requiredParam = this['jwks_uri'] || this['jwks'];
     if(!requiredParam) {
         throw new OidcException('jwks_uri or jwks parameter not set');
-    } else  if(idtoken) {
-        var idtParts = this.getIdTokenParts(idtoken);
+    } else  if(id_token) {
+        var idtParts = this.getIdTokenParts(id_token);
         var header = this.getJsonObject(idtParts[0])
         var jwks = this['jwks'] || this.fetchJSON(this['jwks_uri']);
         if(!jwks)
@@ -546,7 +546,7 @@ OIDC.verifyIdTokenSig = function (idtoken)
                 if(!jwk)
                     new OidcException('No matching JWK found');
                 else {
-                    verified = this.rsaVerifyJWS(idtoken, jwk[0]);
+                    verified = this.rsaVerifyJWS(id_token, jwk[0]);
                 }
             } else
                 throw new OidcException('Unsupported JWS signature algorithm ' + header['alg']);
@@ -559,18 +559,18 @@ OIDC.verifyIdTokenSig = function (idtoken)
 /**
  * Validates the information in the ID Token against configuration data in the Identity Provider
  * and Client configuration set via {@link OIDC.setProviderInfo} and set via {@link OIDC.setClientInfo}
- * @param {string} idtoken      - The ID Token string
+ * @param {string} id_token      - The ID Token string
  * @returns {boolean}           Validity of the ID Token
  * @throws {OidcException}
  */
-OIDC.isValidIdToken = function(idtoken) {
+OIDC.isValidIdToken = function(id_token) {
 
     var idt = null;
     var valid = false;
     this.checkRequiredInfo(['issuer', 'client_id']);
 
-    if(idtoken) {
-        var idtParts = this.getIdTokenParts(idtoken);
+    if(id_token) {
+        var idtParts = this.getIdTokenParts(id_token);
         var payload = this.getJsonObject(idtParts[1])
         if(payload) {
             var now =  new Date() / 1000;
