@@ -218,17 +218,26 @@ OIDC.supportedClientOptions = [
  * if(var)
  *     OIDC.setProviderInfo(discovery);
  */
-OIDC.setProviderInfo = function (p) {
+OIDC.setProviderInfo = function (p)
+{
     var params = this.supportedProviderOptions;
 
-    if (p !== 'undefined') {
-        for (var i = 0; i < params.length; i++) {
-            if (p[params[i]] !== 'undefined') {
-                this[params[i]] = p[params[i]];
+    try{
+        if (p !== 'undefined') {
+            for (var i = 0; i < params.length; i++) {
+                if (p[params[i]] !== 'undefined') {
+                    this[params[i]] = p[params[i]];
+                }
             }
         }
+        return true;
     }
-    return true;
+
+    catch(e){
+        throw new OidcException("Unable to set the Identity Provider's configuration parameters: " + e.toString());
+        return false;
+    }
+
 };
 
 
@@ -250,14 +259,22 @@ OIDC.setClientInfo = function(p)
 {
     var params = this.supportedClientOptions;
 
-    if(typeof p !== 'undefined') {
-        for(var i = 0; i < params.length; i++) {
-            if(typeof p[params[i]] !== 'undefined') {
-                this[params[i]] = p[params[i]];
+    try{
+        if(typeof p !== 'undefined') {
+            for(var i = 0; i < params.length; i++) {
+                if(typeof p[params[i]] !== 'undefined') {
+                    this[params[i]] = p[params[i]];
+                }
             }
         }
+        return true;
     }
-    return true;
+
+    catch(e){
+        throw new OidcException("Unable to set the Client's configuration parameters: " + e.toString());
+        return false;
+    }
+
 };
 
 /** OIDC.debug(toggle, id_token)
@@ -294,27 +311,34 @@ OIDC.storeInfo = function (providerInfo, clientInfo)
     var pInfo = {};
     var cInfo = {};
 
-    if(providerInfo) {
-        for(var i = 0; i < pOptions.length; i++) {
-            if(typeof providerInfo[pOptions[i]] != 'undefined')
-                pInfo[pOptions[i]] = providerInfo[pOptions[i]];
+    try{
+        if(providerInfo) {
+            for(var i = 0; i < pOptions.length; i++) {
+                if(typeof providerInfo[pOptions[i]] != 'undefined')
+                    pInfo[pOptions[i]] = providerInfo[pOptions[i]];
+            }
+            sessionStorage['providerInfo'] = JSON.stringify(pInfo);
+        } else {
+            if(sessionStorage['providerInfo'])
+                sessionStorage.removeItem('providerInfo');
         }
-        sessionStorage['providerInfo'] = JSON.stringify(pInfo);
-    } else {
-        if(sessionStorage['providerInfo'])
-            sessionStorage.removeItem('providerInfo');
+
+        if(clientInfo) {
+            for(i = 0; i < cOptions.length; i++) {
+                if(typeof clientInfo[cOptions[i]] != 'undefined')
+                    cInfo[cOptions[i]] = clientInfo[cOptions[i]];
+            }
+            sessionStorage['clientInfo'] = JSON.stringify(cInfo);
+        } else {
+            if(sessionStorage['clientInfo'])
+                sessionStorage.removeItem('clientInfo');
+        }
     }
 
-    if(clientInfo) {
-        for(i = 0; i < cOptions.length; i++) {
-            if(typeof clientInfo[cOptions[i]] != 'undefined')
-                cInfo[cOptions[i]] = clientInfo[cOptions[i]];
-        }
-        sessionStorage['clientInfo'] = JSON.stringify(cInfo);
-    } else {
-        if(sessionStorage['clientInfo'])
-            sessionStorage.removeItem('clientInfo');
+    catch(e){
+        throw new OidcException('Unable to store the Identity Provider and Client configuration options: ' + e.toString());
     }
+
 };
 
 
@@ -327,12 +351,19 @@ OIDC.restoreInfo = function()
 {
     var providerInfo = sessionStorage['providerInfo'];
     var clientInfo = sessionStorage['clientInfo'];
-    if(providerInfo) {
-        this.setProviderInfo(JSON.parse(providerInfo));
+    try{
+        if(providerInfo) {
+            this.setProviderInfo(JSON.parse(providerInfo));
+        }
+        if(clientInfo) {
+            this.setClientInfo(JSON.parse(clientInfo));
+        }
     }
-    if(clientInfo) {
-        this.setClientInfo(JSON.parse(clientInfo));
+
+    catch(e){
+        throw new OidcException('Unable to restore the Identity Provider and Client configuration options: ' + e.toString());
     }
+
 };
 
 /**
@@ -346,14 +377,22 @@ OIDC.restoreInfo = function()
  */
 OIDC.checkRequiredInfo = function(params)
 {
-    if(params) {
-        for(var i = 0; i < params.length; i++) {
-            if(!this[params[i]]) {
-                throw new OidcException('Required parameter not set - ' + params[i]);
+    try{
+        if(params) {
+            for(var i = 0; i < params.length; i++) {
+                if(!this[params[i]]) {
+                    throw new OidcException('Required parameter not set - ' + params[i]);
+                }
             }
         }
+        return true;
     }
-    return true;
+
+    catch(e){
+        throw new OidcException('Unable to check whether the required configuration parameters are set: ' + e.toString());
+        return false;
+    }
+
 };
 
 /**
@@ -364,8 +403,14 @@ OIDC.checkRequiredInfo = function(params)
  */
 OIDC.clearProviderInfo = function()
 {
-    for(var i = 0; i < this.supportedProviderOptions.length; i++) {
-        this[this.supportedProviderOptions[i]] = null;
+    try{
+        for(var i = 0; i < this.supportedProviderOptions.length; i++) {
+          this[this.supportedProviderOptions[i]] = null;
+        }
+    }
+
+    catch(e){
+        throw new OidcException('Unable to clear the Identity Provider configuration parameters: ' + e.toString());
     }
 };
 
@@ -392,130 +437,134 @@ OIDC.clearProviderInfo = function()
  * OIDC.login();
  */
 OIDC.login = function(reqOptions) {
-    // verify required parameters
-    this.checkRequiredInfo(new Array('client_id', 'redirect_uri', 'authorization_endpoint'));
+    try {
+        // verify required parameters
+        this.checkRequiredInfo(new Array('client_id', 'redirect_uri', 'authorization_endpoint'));
 
-    var state = null;
-    var nonce = null;
+        var state = null;
+        var nonce = null;
 
-    // Replace state and nonce with secure ones if
-    var crypto = window.crypto || window.msCrypto;
-    if(crypto && crypto.getRandomValues) {
-        var D = new Uint32Array(2);
-        crypto.getRandomValues(D);
-        state = D[0].toString(36);
-        nonce = D[1].toString(36);
-    } else {
-        var byteArrayToLong = function(/*byte[]*/byteArray) {
+        // Replace state and nonce with secure ones if
+        var crypto = window.crypto || window.msCrypto;
+        if(crypto && crypto.getRandomValues) {
+          var D = new Uint32Array(2);
+          crypto.getRandomValues(D);
+          state = D[0].toString(36);
+          nonce = D[1].toString(36);
+        } else {
+          var byteArrayToLong = function(/*byte[]*/byteArray) {
             var value = 0;
             for ( var i = byteArray.length - 1; i >= 0; i--) {
-                value = (value * 256) + byteArray[i];
+              value = (value * 256) + byteArray[i];
             }
             return value;
-        };
+          };
 
-        rng_seed_time();
-        var sRandom = new SecureRandom();
-        var randState= new Array(4);
-        sRandom.nextBytes(randState);
-        state = byteArrayToLong(randState).toString(36);
+          rng_seed_time();
+          var sRandom = new SecureRandom();
+          var randState= new Array(4);
+          sRandom.nextBytes(randState);
+          state = byteArrayToLong(randState).toString(36);
 
-        rng_seed_time();
-        var randNonce= new Array(4);
-        sRandom.nextBytes(randNonce);
-        nonce = byteArrayToLong(randNonce).toString(36);
-    }
+          rng_seed_time();
+          var randNonce= new Array(4);
+          sRandom.nextBytes(randNonce);
+          nonce = byteArrayToLong(randNonce).toString(36);
+        }
 
 
-    // Store the them in session storage
-    sessionStorage['state'] = state;
-    sessionStorage['nonce'] = nonce;
+        // Store the them in session storage
+        sessionStorage['state'] = state;
+        sessionStorage['nonce'] = nonce;
 
-    var response_type = 'id_token';
-    var scope = 'openid';
-    var display = null;
-    var max_age = null;
-    var claims = null;
-    var idTokenClaims = {};
-    var userInfoClaims = {};
+        var response_type = 'id_token';
+        var scope = 'openid';
+        var display = null;
+        var max_age = null;
+        var claims = null;
+        var idTokenClaims = {};
+        var userInfoClaims = {};
 
-    if(reqOptions) {
-        if(reqOptions['response_type']) {
+        if(reqOptions) {
+          if(reqOptions['response_type']) {
             var parts = reqOptions['response_type'].split(' ');
             var temp = [];
             if(parts) {
-                for(var i = 0; i < parts.length; i++) {
-                    if(parts[i] == 'code' || parts[i] == 'token' || parts[i] == 'id_token')
-                        temp.push(parts[i]);
-                }
+              for(var i = 0; i < parts.length; i++) {
+                if(parts[i] == 'code' || parts[i] == 'token' || parts[i] == 'id_token')
+                temp.push(parts[i]);
+              }
             }
             if(temp)
-                response_type = temp.join(' ');
-        }
+            response_type = temp.join(' ');
+          }
 
-        if(reqOptions['scope'])
-            scope = reqOptions['scope'];
-        if(reqOptions['display'])
-            display = reqOptions['display'];
-        if(reqOptions['max_age'])
-            max_age = reqOptions['max_age'];
+          if(reqOptions['scope'])
+          scope = reqOptions['scope'];
+          if(reqOptions['display'])
+          display = reqOptions['display'];
+          if(reqOptions['max_age'])
+          max_age = reqOptions['max_age'];
 
 
-        if(reqOptions['claims']) {
+          if(reqOptions['claims']) {
 
             if(this['claims_parameter_supported']) {
 
-                if(reqOptions['claims']['id_token']) {
-                    for(var j = 0; j < reqOptions['claims']['id_token'].length; j++) {
-                        idTokenClaims[reqOptions['claims']['id_token'][j]] = null
-                    }
-                    if(!claims)
-                        claims = {};
-                    claims['id_token'] = idTokenClaims;
+              if(reqOptions['claims']['id_token']) {
+                for(var j = 0; j < reqOptions['claims']['id_token'].length; j++) {
+                  idTokenClaims[reqOptions['claims']['id_token'][j]] = null
                 }
-                if(reqOptions['claims']['userinfo']) {
-                    for(var k = 0; k < reqOptions['claims']['userinfo'].length; k++) {
-                        userInfoClaims[reqOptions['claims']['userinfo'][k]] = null;
-                    }
-                    if(!claims)
-                        claims = {};
-                    claims['userinfo'] = userInfoClaims;
+                if(!claims)
+                claims = {};
+                claims['id_token'] = idTokenClaims;
+              }
+              if(reqOptions['claims']['userinfo']) {
+                for(var k = 0; k < reqOptions['claims']['userinfo'].length; k++) {
+                  userInfoClaims[reqOptions['claims']['userinfo'][k]] = null;
                 }
+                if(!claims)
+                claims = {};
+                claims['userinfo'] = userInfoClaims;
+              }
 
             } else
-                throw new OidcException('Provider does not support claims request parameter')
+            throw new OidcException('Provider does not support claims request parameter')
 
+          }
         }
-    }
 
-    // Construct the redirect URL
-    // For getting an id token, response_type of
-    // "token id_token" (note the space), scope of
-    // "openid", and some value for nonce is required.
-    // client_id must be the consumer key of the connected app.
-    // redirect_uri must match the callback URL configured for
-    // the connected app.
+        // Construct the redirect URL
+        // For getting an id token, response_type of
+        // "token id_token" (note the space), scope of
+        // "openid", and some value for nonce is required.
+        // client_id must be the consumer key of the connected app.
+        // redirect_uri must match the callback URL configured for
+        // the connected app.
 
-    var optParams = '';
-    if(display)
+        var optParams = '';
+        if(display)
         optParams += '&display='  + display;
-    if(max_age)
+        if(max_age)
         optParams += '&max_age=' + max_age;
-    if(claims)
+        if(claims)
         optParams += '&claims=' + JSON.stringify(claims);
 
-    var url =
+        var url =
         this['authorization_endpoint']
-            + '?response_type=' + response_type
-            + '&scope=' + scope
-            + '&nonce=' + nonce
-            + '&client_id=' + this['client_id']
-            + '&redirect_uri=' + this['redirect_uri']
-            + '&state=' + state
-            + optParams;
+        + '?response_type=' + response_type
+        + '&scope=' + scope
+        + '&nonce=' + nonce
+        + '&client_id=' + this['client_id']
+        + '&redirect_uri=' + this['redirect_uri']
+        + '&state=' + state
+        + optParams;
 
 
-    window.location.replace(url);
+        window.location.replace(url);
+    } catch (e) {
+        throw new OidcException('Unable to redirect to the Identity Provider for authenticaton: ' + e.toString());
+    }
 };
 
 
@@ -530,29 +579,33 @@ OIDC.login = function(reqOptions) {
  */
 OIDC.verifyIdTokenSig = function (id_token)
 {
-    var verified = false;
-    var requiredParam = this['jwks_uri'] || this['jwks'];
-    if(!requiredParam) {
-        throw new OidcException('jwks_uri or jwks parameter not set');
-    } else  if(id_token) {
-        var idtParts = this.getIdTokenParts(id_token);
-        var header = this.getJsonObject(idtParts[0])
-        var jwks = this['jwks'] || this.fetchJSON(this['jwks_uri']);
-        if(!jwks)
-            throw new OidcException('No JWK keyset');
-        else {
+    try {
+        var verified = false;
+        var requiredParam = this['jwks_uri'] || this['jwks'];
+        if(!requiredParam) {
+          throw new OidcException('jwks_uri or jwks parameter not set');
+        } else  if(id_token) {
+          var idtParts = this.getIdTokenParts(id_token);
+          var header = this.getJsonObject(idtParts[0])
+          var jwks = this['jwks'] || this.fetchJSON(this['jwks_uri']);
+          if(!jwks)
+          throw new OidcException('No JWK keyset');
+          else {
             if(header['alg'] && header['alg'].substr(0, 2) == 'RS') {
-                var jwk = this.jwk_get_key(jwks, 'RSA', 'sig', header['kid']);
-                if(!jwk)
-                    new OidcException('No matching JWK found');
-                else {
-                    verified = this.rsaVerifyJWS(id_token, jwk[0]);
-                }
+              var jwk = this.jwk_get_key(jwks, 'RSA', 'sig', header['kid']);
+              if(!jwk)
+              new OidcException('No matching JWK found');
+              else {
+                verified = this.rsaVerifyJWS(id_token, jwk[0]);
+              }
             } else
-                throw new OidcException('Unsupported JWS signature algorithm ' + header['alg']);
+            throw new OidcException('Unsupported JWS signature algorithm ' + header['alg']);
+          }
         }
+        return verified;
+    } catch (e) {
+        throw new OidcException('Unable to verify the ID Token signature: ' + e.toString());
     }
-    return verified;
 }
 
 
@@ -563,39 +616,43 @@ OIDC.verifyIdTokenSig = function (id_token)
  * @returns {boolean}           Validity of the ID Token
  * @throws {OidcException}
  */
-OIDC.isValidIdToken = function(id_token) {
+OIDC.isValidIdToken = function(id_token)
+{
+    try {
+        var idt = null;
+        var valid = false;
+        this.checkRequiredInfo(['issuer', 'client_id']);
 
-    var idt = null;
-    var valid = false;
-    this.checkRequiredInfo(['issuer', 'client_id']);
-
-    if(id_token) {
-        var idtParts = this.getIdTokenParts(id_token);
-        var payload = this.getJsonObject(idtParts[1])
-        if(payload) {
+        if(id_token) {
+          var idtParts = this.getIdTokenParts(id_token);
+          var payload = this.getJsonObject(idtParts[1])
+          if(payload) {
             var now =  new Date() / 1000;
             if( payload['iat'] >  now + (5 * 60))
-                throw new OidcException('ID Token issued time is later than current time');
+            throw new OidcException('ID Token issued time is later than current time');
             if(payload['exp'] < now - (5*60))
-                throw new OidcException('ID Token expired');
+            throw new OidcException('ID Token expired');
             var audience = null;
             if(payload['aud']) {
-                if(payload['aud'] instanceof Array) {
-                    audience = payload['aud'][0];
-                } else
-                    audience = payload['aud'];
+              if(payload['aud'] instanceof Array) {
+                audience = payload['aud'][0];
+              } else
+              audience = payload['aud'];
             }
             if(audience != this['client_id'])
-                throw new OidcException('invalid audience');
+            throw new OidcException('invalid audience');
             if(payload['iss'] != this['issuer'])
-                throw new OidcException('invalid issuer ' + payload['iss'] + ' != ' + this['issuer']);
+            throw new OidcException('invalid issuer ' + payload['iss'] + ' != ' + this['issuer']);
             if(payload['nonce'] != sessionStorage['nonce'])
-                throw new OidcException('invalid nonce');
+            throw new OidcException('invalid nonce');
             valid = true;
-        } else
-            throw new OidcException('Unable to parse JWS payload');
+          } else
+          throw new OidcException('Unable to parse JWS payload');
+        }
+        return valid;
+    } catch (e) {
+        throw new OidcException('Unable to validate information in the ID Token: ' + e.toString());
     }
-    return valid;
 }
 
 /**
@@ -607,20 +664,24 @@ OIDC.isValidIdToken = function(id_token) {
  */
 OIDC.rsaVerifyJWS = function (jws, jwk)
 {
-    if(jws && typeof jwk === 'object') {
-        if(jwk['kty'] == 'RSA') {
+    try {
+        if(jws && typeof jwk === 'object') {
+          if(jwk['kty'] == 'RSA') {
             var verifier = KJUR.jws.JWS;
             if(jwk['n'] && jwk['e']) {
-                var pubkey = KEYUTIL.getKey({ kty: 'RSA', n: jwk['n'], e: jwk['e'] })
-                return verifier.verify(jws, pubkey, ['RS256']);
+              var pubkey = KEYUTIL.getKey({ kty: 'RSA', n: jwk['n'], e: jwk['e'] })
+              return verifier.verify(jws, pubkey, ['RS256']);
             } else if (jwk['x5c']) {
-                return verifier.verifyJWSByPemX509Cert(jws, "-----BEGIN CERTIFICATE-----\n" + jwk['x5c'][0] + "\n-----END CERTIFICATE-----\n");
+              return verifier.verifyJWSByPemX509Cert(jws, "-----BEGIN CERTIFICATE-----\n" + jwk['x5c'][0] + "\n-----END CERTIFICATE-----\n");
             }
-        } else {
+          } else {
             throw new OidcException('No RSA kty in JWK');
+          }
         }
+    } catch (e) {
+        throw new OidcException('Unable to verify the JWS string: ' + e.toString());
+        return false;
     }
-    return false;
 }
 
 /**
@@ -631,42 +692,46 @@ OIDC.rsaVerifyJWS = function (jws, jwk)
  */
 OIDC.getValidIdToken = function()
 {
-    var url = window.location.href;
+    try {
+        var url = window.location.href;
 
-    // Check if there was an error parameter
-    var error = url.match('[?&]error=([^&]*)')
-    if (error) {
-        // If so, extract the error description and display it
-        var description = url.match('[?&]error_description=([^&]*)');
-        throw new OidcException(error[1] + ' Description: ' + description[1]);
-    }
-    // Exract state from the state parameter
-    var smatch = url.match('[?&]state=([^&]*)');
-    if (smatch) {
-        var state = smatch[1] ;
-        var sstate = sessionStorage['state'];
-        var badstate = (state != sstate);
-    }
+        // Check if there was an error parameter
+        var error = url.match('[?&]error=([^&]*)')
+        if (error) {
+          // If so, extract the error description and display it
+          var description = url.match('[?&]error_description=([^&]*)');
+          throw new OidcException(error[1] + ' Description: ' + description[1]);
+        }
+        // Exract state from the state parameter
+        var smatch = url.match('[?&]state=([^&]*)');
+        if (smatch) {
+          var state = smatch[1] ;
+          var sstate = sessionStorage['state'];
+          var badstate = (state != sstate);
+        }
 
-    // Extract id token from the id_token parameter
-    var match = url.match('[?&]id_token=([^&]*)');
-    if (badstate) {
-        throw new OidcException("State mismatch");
-    } else if (match) {
-        var id_token = match[1]; // String captured by ([^&]*)
+        // Extract id token from the id_token parameter
+        var match = url.match('[?&]id_token=([^&]*)');
+        if (badstate) {
+          throw new OidcException("State mismatch");
+        } else if (match) {
+          var id_token = match[1]; // String captured by ([^&]*)
 
-        if (id_token) {
+          if (id_token) {
             var sigVerified = this.verifyIdTokenSig(id_token);
             var valid = this.isValidIdToken(id_token);
             if(sigVerified && valid)
-                return id_token;
-        } else {
+            return id_token;
+          } else {
             throw new OidcException('Could not retrieve ID Token from the URL');
+          }
+        } else {
+          throw new OidcException('No ID Token returned');
         }
-    } else {
-        throw new OidcException('No ID Token returned');
+    } catch (e) {
+        throw new OidcException('Unable to get the ID Token from the current page URL: ' + e.toString());
+        return null;
     }
-    return null;
 };
 
 
@@ -677,14 +742,19 @@ OIDC.getValidIdToken = function()
  */
 OIDC.getAccessToken = function()
 {
-    var url = window.location.href;
-
-    // Check for token
-    var token = url.match('[?&]access_token=([^&]*)');
-    if (token)
+    try {
+      var url = window.location.href;
+      // Check for token
+      var token = url.match('[?&]access_token=([^&]*)');
+      if (token)
         return token[1];
-    else
+      else
+        console.error(new Error("No access_token found on current page URL!"));
         return null;
+    } catch (e) {
+        throw new OidcException('Unable to get the Access Token from the current page URL: ' + e.toString());
+        return null;
+    }
 }
 
 
@@ -695,12 +765,17 @@ OIDC.getAccessToken = function()
  */
 OIDC.getCode = function()
 {
-    var url = window.location.href;
+    try {
+        var url = window.location.href;
 
-    // Check for code
-    var code = url.match('[?&]code=([^(&)]*)');
-    if (code) {
-        return code[1];
+        // Check for code
+        var code = url.match('[?&]code=([^(&)]*)');
+        if (code) {
+          return code[1];
+        }
+    } catch (e) {
+        throw new OidcException('Unable to get the Authorization Code from the current page URL: ' + e.toString());
+        return null;
     }
 }
 
@@ -710,10 +785,15 @@ OIDC.getCode = function()
  * @param  {string} id_token    - ID Token
  * @returns {Array} An array of the JWS compact serialization components (header, payload, signature)
  */
-OIDC.getIdTokenParts = function (id_token) {
-    var jws = new KJUR.jws.JWS();
-    jws.parseJWS(id_token);
-    return new Array(jws.parsedJWS.headS, jws.parsedJWS.payloadS, jws.parsedJWS.si);
+OIDC.getIdTokenParts = function (id_token)
+{
+    try {
+        var jws = new KJUR.jws.JWS();
+        jws.parseJWS(id_token);
+        return new Array(jws.parsedJWS.headS, jws.parsedJWS.payloadS, jws.parsedJWS.si);
+    } catch (e) {
+        throw new OidcException('Unable to split the ID Token string: ' + e.toString());
+    }
 };
 
 /**
@@ -721,10 +801,14 @@ OIDC.getIdTokenParts = function (id_token) {
  * @param {string} id_token     - ID Token
  * @returns {object}            - The ID Token payload JSON object
  */
-OIDC.getIdTokenPayload = function (id_token) {
-    var parts = this.getIdTokenParts(id_token);
-    if(parts)
-        return this.getJsonObject(parts[1]);
+OIDC.getIdTokenPayload = function (id_token)
+{
+    try {
+      var parts = this.getIdTokenParts(id_token);
+      if(parts) return this.getJsonObject(parts[1]);
+    } catch (e) {
+      throw new OidcException('Unable to get the contents of the ID Token payload: ' + e.toString());
+    }
 }
 
 /**
@@ -732,12 +816,17 @@ OIDC.getIdTokenPayload = function (id_token) {
  * @param {string} jsonS    - JSON string
  * @returns {object|null}   JSON object or null
  */
-OIDC.getJsonObject = function (jsonS) {
-    var jws = KJUR.jws.JWS;
-    if(jws.isSafeJSONString(jsonS)) {
+OIDC.getJsonObject = function (jsonS)
+{
+    try {
+      var jws = KJUR.jws.JWS;
+      if(jws.isSafeJSONString(jsonS)) {
         return jws.readSafeJSONString(jsonS);
+      }
+    } catch (e) {
+      throw new OidcException('Unable to get the JSON object from JSON string: ' + e.toString());
+      return null;
     }
-    return null;
 //    return JSON.parse(jsonS);
 };
 
@@ -776,56 +865,60 @@ OIDC.fetchJSON = function(url) {
  */
 OIDC.jwk_get_key = function(jwkIn, kty, use, kid )
 {
-    var jwk = null;
-    var foundKeys = [];
+    try {
+      var jwk = null;
+      var foundKeys = [];
 
-    if(jwkIn) {
+      if(jwkIn) {
         if(typeof jwkIn === 'string')
-            jwk = this.getJsonObject(jwkIn);
+        jwk = this.getJsonObject(jwkIn);
         else if(typeof jwkIn === 'object')
-            jwk = jwkIn;
+        jwk = jwkIn;
 
         if(jwk != null) {
-            if(typeof jwk['keys'] === 'object') {
-                if(jwk.keys.length == 0)
-                    return null;
+          if(typeof jwk['keys'] === 'object') {
+            if(jwk.keys.length == 0)
+            return null;
 
-                for(var i = 0; i < jwk.keys.length; i++) {
-                    if(jwk['keys'][i]['kty'] == kty)
-                        foundKeys.push(jwk.keys[i]);
-                }
-
-                if(foundKeys.length == 0)
-                    return null;
-
-                if(use) {
-                    var temp = [];
-                    for(var j = 0; j < foundKeys.length; j++) {
-                        if(!foundKeys[j]['use'])
-                            temp.push(foundKeys[j]);
-                        else if(foundKeys[j]['use'] == use)
-                            temp.push(foundKeys[j]);
-                    }
-                    foundKeys = temp;
-                }
-                if(foundKeys.length == 0)
-                    return null;
-
-                if(kid) {
-                    temp = [];
-                    for(var k = 0; k < foundKeys.length; k++) {
-                        if(foundKeys[k]['kid'] == kid)
-                            temp.push(foundKeys[k]);
-                    }
-                    foundKeys = temp;
-                }
-                if(foundKeys.length == 0)
-                    return null;
-                else
-                    return foundKeys;
+            for(var i = 0; i < jwk.keys.length; i++) {
+              if(jwk['keys'][i]['kty'] == kty)
+              foundKeys.push(jwk.keys[i]);
             }
+
+            if(foundKeys.length == 0)
+            return null;
+
+            if(use) {
+              var temp = [];
+              for(var j = 0; j < foundKeys.length; j++) {
+                if(!foundKeys[j]['use'])
+                temp.push(foundKeys[j]);
+                else if(foundKeys[j]['use'] == use)
+                temp.push(foundKeys[j]);
+              }
+              foundKeys = temp;
+            }
+            if(foundKeys.length == 0)
+            return null;
+
+            if(kid) {
+              temp = [];
+              for(var k = 0; k < foundKeys.length; k++) {
+                if(foundKeys[k]['kid'] == kid)
+                temp.push(foundKeys[k]);
+              }
+              foundKeys = temp;
+            }
+            if(foundKeys.length == 0)
+            return null;
+            else
+            return foundKeys;
+          }
         }
 
+      }
+    } catch (e) {
+        throw new OidcException('Unable to retrieve the JWK key: ' + e.toString());
     }
 
 };
@@ -840,14 +933,18 @@ OIDC.jwk_get_key = function(jwkIn, kty, use, kid )
  */
 OIDC.discover = function(issuer)
 {
-    var discovery = null;
-    if(issuer) {
-        var openidConfig = issuer + '/.well-known/openid-configuration';
-        var discoveryDoc = this.fetchJSON(openidConfig);
-        if(discoveryDoc)
-            discovery = this.getJsonObject(discoveryDoc)
+    try {
+        var discovery = null;
+        if(issuer) {
+          var openidConfig = issuer + '/.well-known/openid-configuration';
+          var discoveryDoc = this.fetchJSON(openidConfig);
+          if(discoveryDoc)
+          discovery = this.getJsonObject(discoveryDoc)
+        }
+        return discovery;
+    } catch (e) {
+        throw new OidcException('Unable to perform discovery: ' + e.toString());
     }
-    return discovery;
 };
 
 
