@@ -15,7 +15,8 @@
             claims_string = claims_string = claims_string + '\n</table>';
 
             function print_id_token(){
-                document.getElementById("id_token").innerHTML = claims_string;
+                button = '<br><button class="float-left submit-button" >Logout</button>';
+                document.getElementById("id_token").innerHTML = claims_string + button;
             }
         </script>
     </HEAD>
