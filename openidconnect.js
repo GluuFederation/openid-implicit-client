@@ -947,6 +947,25 @@ OIDC.discover = function(issuer)
     }
 };
 
+OIDC.getUserInfo = function(providerInfo, id_token)
+{
+  try {
+      var request = new XMLHttpRequest();
+      request.open('GET', providerInfo['userinfo_endpoint'], false);
+      request.setRequestHeader("authorization", id_token);
+      request.send(null);
+
+      if (request.status === 200) {
+          console.log(request.responseText);
+          return request.responseText;
+      } else
+          throw new OidcException("getUserInfo - " + request.status + ' ' + request.statusText);
+
+  }
+  catch(e) {
+      throw new OidcException('Unable to get user info:' + e.toString());
+  }
+}
 
 /**
  * OidcException
