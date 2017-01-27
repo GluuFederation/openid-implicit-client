@@ -1,4 +1,13 @@
-<HTML>
+<!-- Include Bootstrap from a CDN (Content Delivery Network) -->
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+<!DOCTYPE html>
+<html lang="en">
     <HEAD>
         <script src="./openidconnect.js">
         </script>
@@ -20,15 +29,15 @@
     </HEAD>
 
     <BODY>
-
+      <div class="container">
         <h1>Implicit Flow Test Login Page</h1>
 
         Click button to login! &nbsp; &nbsp;
 
-<button onClick="OIDC.login( {scope : 'openid profile email',
-                              response_type : 'token id_token'} );"
-        class="float-left submit-button" >Authenticate</button>
-
+        <button onClick="OIDC.login( {scope : 'openid profile email',
+                                  response_type : 'token id_token'} );"
+        type="button" class="btn btn-success" >Authenticate</button>
+      </div>
     </BODY>
 
 </HTML>
