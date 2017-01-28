@@ -947,16 +947,19 @@ OIDC.discover = function(issuer)
     }
 };
 
-OIDC.getUserInfo = function(providerInfo, id_token)
+OIDC.getUserInfo = function()
 {
   try {
+      var currentURL = window.location.href;
+      var providerURL = currentURL.match('https://([^/]*)')
+      var providerInfo = OIDC.discover(providerURL[0]);
+      var access_token = OIDC.getAccessToken();
       var request = new XMLHttpRequest();
       request.open('GET', providerInfo['userinfo_endpoint'], false);
-      request.setRequestHeader("authorization", id_token);
+      request.setRequestHeader("authorization", "Bearer " + access_token);
       request.send(null);
 
       if (request.status === 200) {
-          console.log(request.responseText);
           return request.responseText;
       } else
           throw new OidcException("getUserInfo - " + request.status + ' ' + request.statusText);
