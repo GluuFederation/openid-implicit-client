@@ -10,6 +10,7 @@
 
         <script>
             OIDC.restoreInfo();
+            console.log(JSON.parse(OIDC.getUserInfo()));
             var id_token = OIDC.getValidIdToken();
             OIDC.debug(true, id_token);
             var claims_map = JSON.parse(OIDC.getIdTokenParts(id_token)[1]);
