@@ -13,14 +13,14 @@
             var id_token = OIDC.getValidIdToken();
             OIDC.debug(true, id_token);
             var tokenClaims = OIDC.getIdTokenParts(id_token)[1];
-            var tokenClaimsString = getHTMLTableFromJSONObj(tokenClaims);
-            var userInfo = OIDC.getUserInfo();
-            var userInfoClaimsString = getHTMLTableFromJSONObj(userInfo);
+            var tokenClaimsHTMLString = getHTMLTableFromJSONObj(tokenClaims);
+            var userInfoClaims = OIDC.getUserInfo();
+            var userInfoClaimsHTMLString = getHTMLTableFromJSONObj(userInfoClaims);
 
             function print_id_token(){
                 button = '<br><button type="button" class="btn btn-danger" >Logout</button>';
-                document.getElementById("id_token").innerHTML = '<b>Id_token</b>' + tokenClaimsString +
-                                                                '\n<b>User Info</b>' + userInfoClaimsString
+                document.getElementById("id_token").innerHTML = '<b>Id_token</b>' + tokenClaimsHTMLString +
+                                                                '\n<b>User Info</b>' + userInfoClaimsHTMLString
                                                                 + button;
             }
         </script>
