@@ -954,7 +954,7 @@ OIDC.getUserInfo = function(access_token)
       var providerURL = currentURL.match('https://([^/]*)')
       var providerInfo = OIDC.discover(providerURL[0]);
       var request = new XMLHttpRequest();
-      request.open('GET', providerInfo['userinfo_endpoint'], false);
+      request.open('POST', providerInfo['userinfo_endpoint'], false);
       request.setRequestHeader("authorization", "Bearer " + access_token);
       request.send(null);
 
