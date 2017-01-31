@@ -970,6 +970,23 @@ OIDC.getUserInfo = function()
   }
 }
 
+function getHTMLTableFromJSONObj(JSONObj)
+{
+    try {
+      var map = JSON.parse(JSONObj);
+      var HTMLString = '\n<table class="table table-striped">';
+      for (var claim in map){
+         HTMLString = HTMLString + '\n<TR><TD>' + claim + '</TD><TD>' + map[claim] + '</TD></TR>';
+      }
+      HTMLString = HTMLString + '\n</table>';
+      return HTMLString;
+    } catch (e) {
+      throw new OidcException('Unable to get JSON Obj to HTML table:' + e.toString());
+      return null;
+    }
+
+}
+
 /**
  * OidcException
  * @param {string } message  - The exception error message
