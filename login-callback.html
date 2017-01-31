@@ -13,18 +13,18 @@
             var id_token = OIDC.getValidIdToken();
             OIDC.debug(true, id_token);
             var tokenClaimsMap = JSON.parse(OIDC.getIdTokenParts(id_token)[1]);
-            tokenClaimsString = '<table>';
+            tokenClaimsString = '<table class="table table-striped">';
             for (var claim in tokenClaimsMap){
                tokenClaimsString = tokenClaimsString + '\n<TR><TD>' + claim + '</TD><TD>' + tokenClaimsMap[claim] + '</TD></TR>';
             }
             tokenClaimsString = tokenClaimsString + '\n</table>';
             var userInfoClaimsMap = JSON.parse(OIDC.getUserInfo());
-            userInfoClaimsString = '\n<table>';
+            userInfoClaimsString = '\n<table class="table table-striped">';
             for (var claim in userInfoClaimsMap){
                userInfoClaimsString = userInfoClaimsString + '\n<TR><TD>' + claim + '</TD><TD>' + userInfoClaimsMap[claim] + '</TD></TR>';
             }
             userInfoClaimsString = userInfoClaimsString + '\n</table>';
-            tokenClaimsString = tokenClaimsString + '\n<b>UserInfo</b>';
+            tokenClaimsString = tokenClaimsString + '\n<b>User Info</b>';
 
             function print_id_token(){
                 button = '<br><button type="button" class="btn btn-danger" >Logout</button>';
@@ -37,7 +37,7 @@
       <div class="container">
         <h1>Implicit Flow Test Callback</h1>
 
-        <b>id_token</b>
+        <b>Id_token</b>
         <div id="id_token">
             id_token claims not found.
         </div>
