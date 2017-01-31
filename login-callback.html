@@ -10,19 +10,25 @@
 
         <script>
             OIDC.restoreInfo();
-            console.log(JSON.parse(OIDC.getUserInfo()));
             var id_token = OIDC.getValidIdToken();
             OIDC.debug(true, id_token);
-            var claims_map = JSON.parse(OIDC.getIdTokenParts(id_token)[1]);
-            claims_string = '<table>';
-            for (var claim in claims_map){
-               claims_string = claims_string + '\n<TR><TD>' + claim + '</TD><TD>' + claims_map[claim] + '</TD></TR>';
+            var tokenClaimsMap = JSON.parse(OIDC.getIdTokenParts(id_token)[1]);
+            tokenClaimsString = '<table>';
+            for (var claim in tokenClaimsMap){
+               tokenClaimsString = tokenClaimsString + '\n<TR><TD>' + claim + '</TD><TD>' + tokenClaimsMap[claim] + '</TD></TR>';
             }
-            claims_string = claims_string = claims_string + '\n</table>';
+            tokenClaimsString = tokenClaimsString + '\n</table>';
+            var userInfoClaimsMap = JSON.parse(OIDC.getUserInfo());
+            userInfoClaimsString = '\n<table>';
+            for (var claim in userInfoClaimsMap){
+               userInfoClaimsString = userInfoClaimsString + '\n<TR><TD>' + claim + '</TD><TD>' + userInfoClaimsMap[claim] + '</TD></TR>';
+            }
+            userInfoClaimsString = userInfoClaimsString + '\n</table>';
+            tokenClaimsString = tokenClaimsString + '\n<b>UserInfo</b>';
 
             function print_id_token(){
                 button = '<br><button type="button" class="btn btn-danger" >Logout</button>';
-                document.getElementById("id_token").innerHTML = claims_string + button;
+                document.getElementById("id_token").innerHTML = tokenClaimsString + userInfoClaimsString + button;
             }
         </script>
     </HEAD>
