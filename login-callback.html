@@ -12,23 +12,16 @@
             OIDC.restoreInfo();
             var id_token = OIDC.getValidIdToken();
             OIDC.debug(true, id_token);
-            var tokenClaimsMap = JSON.parse(OIDC.getIdTokenParts(id_token)[1]);
-            tokenClaimsString = '<table class="table table-striped">';
-            for (var claim in tokenClaimsMap){
-               tokenClaimsString = tokenClaimsString + '\n<TR><TD>' + claim + '</TD><TD>' + tokenClaimsMap[claim] + '</TD></TR>';
-            }
-            tokenClaimsString = tokenClaimsString + '\n</table>';
-            var userInfoClaimsMap = JSON.parse(OIDC.getUserInfo());
-            userInfoClaimsString = '\n<table class="table table-striped">';
-            for (var claim in userInfoClaimsMap){
-               userInfoClaimsString = userInfoClaimsString + '\n<TR><TD>' + claim + '</TD><TD>' + userInfoClaimsMap[claim] + '</TD></TR>';
-            }
-            userInfoClaimsString = userInfoClaimsString + '\n</table>';
-            tokenClaimsString = tokenClaimsString + '\n<b>User Info</b>';
+            var tokenClaims = OIDC.getIdTokenParts(id_token)[1];
+            var tokenClaimsString = getHTMLTableFromJSONObj(tokenClaims);
+            var userInfo = OIDC.getUserInfo();
+            var userInfoClaimsString = getHTMLTableFromJSONObj(userInfo);
 
             function print_id_token(){
                 button = '<br><button type="button" class="btn btn-danger" >Logout</button>';
-                document.getElementById("id_token").innerHTML = tokenClaimsString + userInfoClaimsString + button;
+                document.getElementById("id_token").innerHTML = '<b>Id_token</b>' + tokenClaimsString +
+                                                                '\n<b>User Info</b>' + userInfoClaimsString
+                                                                + button;
             }
         </script>
     </HEAD>
@@ -37,7 +30,6 @@
       <div class="container">
         <h1>Implicit Flow Test Callback</h1>
 
-        <b>Id_token</b>
         <div id="id_token">
             id_token claims not found.
         </div>
