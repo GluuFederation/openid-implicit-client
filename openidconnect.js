@@ -218,17 +218,26 @@ OIDC.supportedClientOptions = [
  * if(var)
  *     OIDC.setProviderInfo(discovery);
  */
-OIDC.setProviderInfo = function (p) {
+OIDC.setProviderInfo = function (p)
+{
     var params = this.supportedProviderOptions;
 
-    if (p !== 'undefined') {
-        for (var i = 0; i < params.length; i++) {
-            if (p[params[i]] !== 'undefined') {
-                this[params[i]] = p[params[i]];
+    try{
+        if (p !== 'undefined') {
+            for (var i = 0; i < params.length; i++) {
+                if (p[params[i]] !== 'undefined') {
+                    this[params[i]] = p[params[i]];
+                }
             }
         }
+        return true;
     }
-    return true;
+
+    catch(e){
+        throw new OidcException("Unable to set the Identity Provider's configuration parameters: " + e.toString());
+        return false;
+    }
+
 };
 
 
@@ -250,16 +259,43 @@ OIDC.setClientInfo = function(p)
 {
     var params = this.supportedClientOptions;
 
-    if(typeof p !== 'undefined') {
-        for(var i = 0; i < params.length; i++) {
-            if(typeof p[params[i]] !== 'undefined') {
-                this[params[i]] = p[params[i]];
+    try{
+        if(typeof p !== 'undefined') {
+            for(var i = 0; i < params.length; i++) {
+                if(typeof p[params[i]] !== 'undefined') {
+                    this[params[i]] = p[params[i]];
+                }
             }
         }
+        return true;
     }
-    return true;
+
+    catch(e){
+        throw new OidcException("Unable to set the Client's configuration parameters: " + e.toString());
+        return false;
+    }
+
 };
 
+/** OIDC.debug(toggle, id_token)
+    params: toggle - enable/disable debugging;
+            id_token - current session id_token;
+    Print provider information, client information and
+    results of id_token verification on console. */
+
+OIDC.debug = function (toggle, id_token)
+{
+  if (toggle == true){
+    var providerInfo = sessionStorage['providerInfo'];
+    var clientInfo = sessionStorage['clientInfo'];
+    var sigVerified = this.verifyIdTokenSig(id_token);
+    var valid = this.isValidIdToken(id_token);
+    console.log({provider: providerInfo, client: clientInfo});
+    if(!valid) console.log("Id_token is not valid!");
+    if(!sigVerified) console.log("The signature of the id_token is not verified!");
+    if(sigVerified && valid) console.log("Id_token is valid and its signature is verified!");
+  }
+}
 
 /**
  * Stores the Identity Provider and Client configuration options in the browser session storage for reuse later
@@ -275,27 +311,34 @@ OIDC.storeInfo = function (providerInfo, clientInfo)
     var pInfo = {};
     var cInfo = {};
 
-    if(providerInfo) {
-        for(var i = 0; i < pOptions.length; i++) {
-            if(typeof providerInfo[pOptions[i]] != 'undefined')
-                pInfo[pOptions[i]] = providerInfo[pOptions[i]];
+    try{
+        if(providerInfo) {
+            for(var i = 0; i < pOptions.length; i++) {
+                if(typeof providerInfo[pOptions[i]] != 'undefined')
+                    pInfo[pOptions[i]] = providerInfo[pOptions[i]];
+            }
+            sessionStorage['providerInfo'] = JSON.stringify(pInfo);
+        } else {
+            if(sessionStorage['providerInfo'])
+                sessionStorage.removeItem('providerInfo');
         }
-        sessionStorage['providerInfo'] = JSON.stringify(pInfo);
-    } else {
-        if(sessionStorage['providerInfo'])
-            sessionStorage.removeItem('providerInfo');
+
+        if(clientInfo) {
+            for(i = 0; i < cOptions.length; i++) {
+                if(typeof clientInfo[cOptions[i]] != 'undefined')
+                    cInfo[cOptions[i]] = clientInfo[cOptions[i]];
+            }
+            sessionStorage['clientInfo'] = JSON.stringify(cInfo);
+        } else {
+            if(sessionStorage['clientInfo'])
+                sessionStorage.removeItem('clientInfo');
+        }
     }
 
-    if(clientInfo) {
-        for(i = 0; i < cOptions.length; i++) {
-            if(typeof clientInfo[cOptions[i]] != 'undefined')
-                cInfo[cOptions[i]] = clientInfo[cOptions[i]];
-        }
-        sessionStorage['clientInfo'] = JSON.stringify(cInfo);
-    } else {
-        if(sessionStorage['clientInfo'])
-            sessionStorage.removeItem('clientInfo');
+    catch(e){
+        throw new OidcException('Unable to store the Identity Provider and Client configuration options: ' + e.toString());
     }
+
 };
 
 
@@ -308,12 +351,19 @@ OIDC.restoreInfo = function()
 {
     var providerInfo = sessionStorage['providerInfo'];
     var clientInfo = sessionStorage['clientInfo'];
-    if(providerInfo) {
-        this.setProviderInfo(JSON.parse(providerInfo));
+    try{
+        if(providerInfo) {
+            this.setProviderInfo(JSON.parse(providerInfo));
+        }
+        if(clientInfo) {
+            this.setClientInfo(JSON.parse(clientInfo));
+        }
     }
-    if(clientInfo) {
-        this.setClientInfo(JSON.parse(clientInfo));
+
+    catch(e){
+        throw new OidcException('Unable to restore the Identity Provider and Client configuration options: ' + e.toString());
     }
+
 };
 
 /**
@@ -327,14 +377,22 @@ OIDC.restoreInfo = function()
  */
 OIDC.checkRequiredInfo = function(params)
 {
-    if(params) {
-        for(var i = 0; i < params.length; i++) {
-            if(!this[params[i]]) {
-                throw new OidcException('Required parameter not set - ' + params[i]);
+    try{
+        if(params) {
+            for(var i = 0; i < params.length; i++) {
+                if(!this[params[i]]) {
+                    throw new OidcException('Required parameter not set - ' + params[i]);
+                }
             }
         }
+        return true;
     }
-    return true;
+
+    catch(e){
+        throw new OidcException('Unable to check whether the required configuration parameters are set: ' + e.toString());
+        return false;
+    }
+
 };
 
 /**
@@ -345,8 +403,14 @@ OIDC.checkRequiredInfo = function(params)
  */
 OIDC.clearProviderInfo = function()
 {
-    for(var i = 0; i < this.supportedProviderOptions.length; i++) {
-        this[this.supportedProviderOptions[i]] = null;
+    try{
+        for(var i = 0; i < this.supportedProviderOptions.length; i++) {
+          this[this.supportedProviderOptions[i]] = null;
+        }
+    }
+
+    catch(e){
+        throw new OidcException('Unable to clear the Identity Provider configuration parameters: ' + e.toString());
     }
 };
 
@@ -373,130 +437,134 @@ OIDC.clearProviderInfo = function()
  * OIDC.login();
  */
 OIDC.login = function(reqOptions) {
-    // verify required parameters
-    this.checkRequiredInfo(new Array('client_id', 'redirect_uri', 'authorization_endpoint'));
+    try {
+        // verify required parameters
+        this.checkRequiredInfo(new Array('client_id', 'redirect_uri', 'authorization_endpoint'));
 
-    var state = null;
-    var nonce = null;
+        var state = null;
+        var nonce = null;
 
-    // Replace state and nonce with secure ones if
-    var crypto = window.crypto || window.msCrypto;
-    if(crypto && crypto.getRandomValues) {
-        var D = new Uint32Array(2);
-        crypto.getRandomValues(D);
-        state = D[0].toString(36);
-        nonce = D[1].toString(36);
-    } else {
-        var byteArrayToLong = function(/*byte[]*/byteArray) {
+        // Replace state and nonce with secure ones if
+        var crypto = window.crypto || window.msCrypto;
+        if(crypto && crypto.getRandomValues) {
+          var D = new Uint32Array(2);
+          crypto.getRandomValues(D);
+          state = D[0].toString(36);
+          nonce = D[1].toString(36);
+        } else {
+          var byteArrayToLong = function(/*byte[]*/byteArray) {
             var value = 0;
             for ( var i = byteArray.length - 1; i >= 0; i--) {
-                value = (value * 256) + byteArray[i];
+              value = (value * 256) + byteArray[i];
             }
             return value;
-        };
+          };
 
-        rng_seed_time();
-        var sRandom = new SecureRandom();
-        var randState= new Array(4);
-        sRandom.nextBytes(randState);
-        state = byteArrayToLong(randState).toString(36);
+          rng_seed_time();
+          var sRandom = new SecureRandom();
+          var randState= new Array(4);
+          sRandom.nextBytes(randState);
+          state = byteArrayToLong(randState).toString(36);
 
-        rng_seed_time();
-        var randNonce= new Array(4);
-        sRandom.nextBytes(randNonce);
-        nonce = byteArrayToLong(randNonce).toString(36);
-    }
+          rng_seed_time();
+          var randNonce= new Array(4);
+          sRandom.nextBytes(randNonce);
+          nonce = byteArrayToLong(randNonce).toString(36);
+        }
 
 
-    // Store the them in session storage
-    sessionStorage['state'] = state;
-    sessionStorage['nonce'] = nonce;
+        // Store the them in session storage
+        sessionStorage['state'] = state;
+        sessionStorage['nonce'] = nonce;
 
-    var response_type = 'id_token';
-    var scope = 'openid';
-    var display = null;
-    var max_age = null;
-    var claims = null;
-    var idTokenClaims = {};
-    var userInfoClaims = {};
+        var response_type = 'id_token';
+        var scope = 'openid';
+        var display = null;
+        var max_age = null;
+        var claims = null;
+        var idTokenClaims = {};
+        var userInfoClaims = {};
 
-    if(reqOptions) {
-        if(reqOptions['response_type']) {
+        if(reqOptions) {
+          if(reqOptions['response_type']) {
             var parts = reqOptions['response_type'].split(' ');
             var temp = [];
             if(parts) {
-                for(var i = 0; i < parts.length; i++) {
-                    if(parts[i] == 'code' || parts[i] == 'token' || parts[i] == 'id_token')
-                        temp.push(parts[i]);
-                }
+              for(var i = 0; i < parts.length; i++) {
+                if(parts[i] == 'code' || parts[i] == 'token' || parts[i] == 'id_token')
+                temp.push(parts[i]);
+              }
             }
             if(temp)
-                response_type = temp.join(' ');
-        }
+            response_type = temp.join(' ');
+          }
 
-        if(reqOptions['scope'])
-            scope = reqOptions['scope'];
-        if(reqOptions['display'])
-            display = reqOptions['display'];
-        if(reqOptions['max_age'])
-            max_age = reqOptions['max_age'];
+          if(reqOptions['scope'])
+          scope = reqOptions['scope'];
+          if(reqOptions['display'])
+          display = reqOptions['display'];
+          if(reqOptions['max_age'])
+          max_age = reqOptions['max_age'];
 
 
-        if(reqOptions['claims']) {
+          if(reqOptions['claims']) {
 
             if(this['claims_parameter_supported']) {
 
-                if(reqOptions['claims']['id_token']) {
-                    for(var j = 0; j < reqOptions['claims']['id_token'].length; j++) {
-                        idTokenClaims[reqOptions['claims']['id_token'][j]] = null
-                    }
-                    if(!claims)
-                        claims = {};
-                    claims['id_token'] = idTokenClaims;
+              if(reqOptions['claims']['id_token']) {
+                for(var j = 0; j < reqOptions['claims']['id_token'].length; j++) {
+                  idTokenClaims[reqOptions['claims']['id_token'][j]] = null
                 }
-                if(reqOptions['claims']['userinfo']) {
-                    for(var k = 0; k < reqOptions['claims']['userinfo'].length; k++) {
-                        userInfoClaims[reqOptions['claims']['userinfo'][k]] = null;
-                    }
-                    if(!claims)
-                        claims = {};
-                    claims['userinfo'] = userInfoClaims;
+                if(!claims)
+                claims = {};
+                claims['id_token'] = idTokenClaims;
+              }
+              if(reqOptions['claims']['userinfo']) {
+                for(var k = 0; k < reqOptions['claims']['userinfo'].length; k++) {
+                  userInfoClaims[reqOptions['claims']['userinfo'][k]] = null;
                 }
+                if(!claims)
+                claims = {};
+                claims['userinfo'] = userInfoClaims;
+              }
 
             } else
-                throw new OidcException('Provider does not support claims request parameter')
+            throw new OidcException('Provider does not support claims request parameter')
 
+          }
         }
-    }
 
-    // Construct the redirect URL
-    // For getting an id token, response_type of
-    // "token id_token" (note the space), scope of
-    // "openid", and some value for nonce is required.
-    // client_id must be the consumer key of the connected app.
-    // redirect_uri must match the callback URL configured for
-    // the connected app.
+        // Construct the redirect URL
+        // For getting an id token, response_type of
+        // "token id_token" (note the space), scope of
+        // "openid", and some value for nonce is required.
+        // client_id must be the consumer key of the connected app.
+        // redirect_uri must match the callback URL configured for
+        // the connected app.
 
-    var optParams = '';
-    if(display)
+        var optParams = '';
+        if(display)
         optParams += '&display='  + display;
-    if(max_age)
+        if(max_age)
         optParams += '&max_age=' + max_age;
-    if(claims)
+        if(claims)
         optParams += '&claims=' + JSON.stringify(claims);
 
-    var url =
+        var url =
         this['authorization_endpoint']
-            + '?response_type=' + response_type
-            + '&scope=' + scope
-            + '&nonce=' + nonce
-            + '&client_id=' + this['client_id']
-            + '&redirect_uri=' + this['redirect_uri']
-            + '&state=' + state
-            + optParams;
+        + '?response_type=' + response_type
+        + '&scope=' + scope
+        + '&nonce=' + nonce
+        + '&client_id=' + this['client_id']
+        + '&redirect_uri=' + this['redirect_uri']
+        + '&state=' + state
+        + optParams;
 
 
-    window.location.replace(url);
+        window.location.replace(url);
+    } catch (e) {
+        throw new OidcException('Unable to redirect to the Identity Provider for authenticaton: ' + e.toString());
+    }
 };
 
 
@@ -504,79 +572,87 @@ OIDC.login = function(reqOptions) {
  * Verifies the ID Token signature using the JWK Keyset from jwks or jwks_uri of the
  * Identity Provider Configuration options set via {@link OIDC.setProviderInfo}.
  * Supports only RSA signatures
- * @param {string }idtoken      - The ID Token string
+ * @param {string }id_token      - The ID Token string
  * @returns {boolean}           Indicates whether the signature is valid or not
  * @see OIDC.setProviderInfo
  * @throws {OidcException}
  */
-OIDC.verifyIdTokenSig = function (idtoken)
+OIDC.verifyIdTokenSig = function (id_token)
 {
-    var verified = false;
-    var requiredParam = this['jwks_uri'] || this['jwks'];
-    if(!requiredParam) {
-        throw new OidcException('jwks_uri or jwks parameter not set');
-    } else  if(idtoken) {
-        var idtParts = this.getIdTokenParts(idtoken);
-        var header = this.getJsonObject(idtParts[0])
-        var jwks = this['jwks'] || this.fetchJSON(this['jwks_uri']);
-        if(!jwks)
-            throw new OidcException('No JWK keyset');
-        else {
+    try {
+        var verified = false;
+        var requiredParam = this['jwks_uri'] || this['jwks'];
+        if(!requiredParam) {
+          throw new OidcException('jwks_uri or jwks parameter not set');
+        } else  if(id_token) {
+          var idtParts = this.getIdTokenParts(id_token);
+          var header = this.getJsonObject(idtParts[0])
+          var jwks = this['jwks'] || this.fetchJSON(this['jwks_uri']);
+          if(!jwks)
+          throw new OidcException('No JWK keyset');
+          else {
             if(header['alg'] && header['alg'].substr(0, 2) == 'RS') {
-                var jwk = this.jwk_get_key(jwks, 'RSA', 'sig', header['kid']);
-                if(!jwk)
-                    new OidcException('No matching JWK found');
-                else {
-                    verified = this.rsaVerifyJWS(idtoken, jwk[0]);
-                }
+              var jwk = this.jwk_get_key(jwks, 'RSA', 'sig', header['kid']);
+              if(!jwk)
+              new OidcException('No matching JWK found');
+              else {
+                verified = this.rsaVerifyJWS(id_token, jwk[0]);
+              }
             } else
-                throw new OidcException('Unsupported JWS signature algorithm ' + header['alg']);
+            throw new OidcException('Unsupported JWS signature algorithm ' + header['alg']);
+          }
         }
+        return verified;
+    } catch (e) {
+        throw new OidcException('Unable to verify the ID Token signature: ' + e.toString());
     }
-    return verified;
 }
 
 
 /**
  * Validates the information in the ID Token against configuration data in the Identity Provider
  * and Client configuration set via {@link OIDC.setProviderInfo} and set via {@link OIDC.setClientInfo}
- * @param {string} idtoken      - The ID Token string
+ * @param {string} id_token      - The ID Token string
  * @returns {boolean}           Validity of the ID Token
  * @throws {OidcException}
  */
-OIDC.isValidIdToken = function(idtoken) {
+OIDC.isValidIdToken = function(id_token)
+{
+    try {
+        var idt = null;
+        var valid = false;
+        this.checkRequiredInfo(['issuer', 'client_id']);
 
-    var idt = null;
-    var valid = false;
-    this.checkRequiredInfo(['issuer', 'client_id']);
-
-    if(idtoken) {
-        var idtParts = this.getIdTokenParts(idtoken);
-        var payload = this.getJsonObject(idtParts[1])
-        if(payload) {
+        if(id_token) {
+          var idtParts = this.getIdTokenParts(id_token);
+          var payload = this.getJsonObject(idtParts[1])
+          if(payload) {
             var now =  new Date() / 1000;
             if( payload['iat'] >  now + (5 * 60))
-                throw new OidcException('ID Token issued time is later than current time');
+            throw new OidcException('ID Token issued time is later than current time');
             if(payload['exp'] < now - (5*60))
-                throw new OidcException('ID Token expired');
+            throw new OidcException('ID Token expired');
             var audience = null;
             if(payload['aud']) {
-                if(payload['aud'] instanceof Array) {
-                    audience = payload['aud'][0];
-                } else
-                    audience = payload['aud'];
+              if(payload['aud'] instanceof Array) {
+                audience = payload['aud'][0];
+              } else
+              audience = payload['aud'];
             }
             if(audience != this['client_id'])
-                throw new OidcException('invalid audience');
+            throw new OidcException('invalid audience');
             if(payload['iss'] != this['issuer'])
-                throw new OidcException('invalid issuer ' + payload['iss'] + ' != ' + this['issuer']);
+            throw new OidcException('invalid issuer ' + payload['iss'] + ' != ' + this['issuer']);
             if(payload['nonce'] != sessionStorage['nonce'])
-                throw new OidcException('invalid nonce');
+            throw new OidcException('invalid nonce');
             valid = true;
-        } else
-            throw new OidcException('Unable to parse JWS payload');
+          } else
+          throw new OidcException('Unable to parse JWS payload');
+        }
+        return valid;
+    } catch (e) {
+        throw new OidcException('Unable to validate information in the ID Token: ' + e.toString());
     }
-    return valid;
 }
 
 /**
@@ -588,21 +664,24 @@ OIDC.isValidIdToken = function(idtoken) {
  */
 OIDC.rsaVerifyJWS = function (jws, jwk)
 {
-    if(jws && typeof jwk === 'object') {
-        if(jwk['kty'] == 'RSA') {
-            var verifier = new KJUR.jws.JWS();
+    try {
+        if(jws && typeof jwk === 'object') {
+          if(jwk['kty'] == 'RSA') {
+            var verifier = KJUR.jws.JWS;
             if(jwk['n'] && jwk['e']) {
-                var keyN = b64utohex(jwk['n']);
-                var keyE = b64utohex(jwk['e']);
-                return verifier.verifyJWSByNE(jws, keyN, keyE);
+              var pubkey = KEYUTIL.getKey({ kty: 'RSA', n: jwk['n'], e: jwk['e'] })
+              return verifier.verify(jws, pubkey, ['RS256']);
             } else if (jwk['x5c']) {
-                return verifier.verifyJWSByPemX509Cert(jws, "-----BEGIN CERTIFICATE-----\n" + jwk['x5c'][0] + "\n-----END CERTIFICATE-----\n");
+              return verifier.verifyJWSByPemX509Cert(jws, "-----BEGIN CERTIFICATE-----\n" + jwk['x5c'][0] + "\n-----END CERTIFICATE-----\n");
             }
-        } else {
+          } else {
             throw new OidcException('No RSA kty in JWK');
+          }
         }
+    } catch (e) {
+        throw new OidcException('Unable to verify the JWS string: ' + e.toString());
+        return false;
     }
-    return false;
 }
 
 /**
@@ -613,42 +692,46 @@ OIDC.rsaVerifyJWS = function (jws, jwk)
  */
 OIDC.getValidIdToken = function()
 {
-    var url = window.location.href;
+    try {
+        var url = window.location.href;
 
-    // Check if there was an error parameter
-    var error = url.match('[?&]error=([^&]*)')
-    if (error) {
-        // If so, extract the error description and display it
-        var description = url.match('[?&]error_description=([^&]*)');
-        throw new OidcException(error[1] + ' Description: ' + description[1]);
-    }
-    // Exract state from the state parameter
-    var smatch = url.match('[?&]state=([^&]*)');
-    if (smatch) {
-        var state = smatch[1] ;
-        var sstate = sessionStorage['state'];
-        var badstate = (state != sstate);
-    }
+        // Check if there was an error parameter
+        var error = url.match('[?&]error=([^&]*)')
+        if (error) {
+          // If so, extract the error description and display it
+          var description = url.match('[?&]error_description=([^&]*)');
+          throw new OidcException(error[1] + ' Description: ' + description[1]);
+        }
+        // Exract state from the state parameter
+        var smatch = url.match('[?&]state=([^&]*)');
+        if (smatch) {
+          var state = smatch[1] ;
+          var sstate = sessionStorage['state'];
+          var badstate = (state != sstate);
+        }
 
-    // Extract id token from the id_token parameter
-    var match = url.match('[?&]id_token=([^&]*)');
-    if (badstate) {
-        throw new OidcException("State mismatch");
-    } else if (match) {
-        var id_token = match[1]; // String captured by ([^&]*)
+        // Extract id token from the id_token parameter
+        var match = url.match('[?&]id_token=([^&]*)');
+        if (badstate) {
+          throw new OidcException("State mismatch");
+        } else if (match) {
+          var id_token = match[1]; // String captured by ([^&]*)
 
-        if (id_token) {
+          if (id_token) {
             var sigVerified = this.verifyIdTokenSig(id_token);
             var valid = this.isValidIdToken(id_token);
             if(sigVerified && valid)
-                return id_token;
-        } else {
+            return id_token;
+          } else {
             throw new OidcException('Could not retrieve ID Token from the URL');
+          }
+        } else {
+          throw new OidcException('No ID Token returned');
         }
-    } else {
-        throw new OidcException('No ID Token returned');
+    } catch (e) {
+        throw new OidcException('Unable to get the ID Token from the current page URL: ' + e.toString());
+        return null;
     }
-    return null;
 };
 
 
@@ -659,14 +742,19 @@ OIDC.getValidIdToken = function()
  */
 OIDC.getAccessToken = function()
 {
-    var url = window.location.href;
-
-    // Check for token
-    var token = url.match('[?&]access_token=([^&]*)');
-    if (token)
+    try {
+      var url = window.location.href;
+      // Check for token
+      var token = url.match('[?#]access_token=([^&]*)');
+      if (token)
         return token[1];
-    else
+      else
+        console.error(new Error("No access_token found on current page URL!"));
         return null;
+    } catch (e) {
+        throw new OidcException('Unable to get the Access Token from the current page URL: ' + e.toString());
+        return null;
+    }
 }
 
 
@@ -677,12 +765,17 @@ OIDC.getAccessToken = function()
  */
 OIDC.getCode = function()
 {
-    var url = window.location.href;
+    try {
+        var url = window.location.href;
 
-    // Check for code
-    var code = url.match('[?&]code=([^(&)]*)');
-    if (code) {
-        return code[1];
+        // Check for code
+        var code = url.match('[?&]code=([^(&)]*)');
+        if (code) {
+          return code[1];
+        }
+    } catch (e) {
+        throw new OidcException('Unable to get the Authorization Code from the current page URL: ' + e.toString());
+        return null;
     }
 }
 
@@ -692,10 +785,15 @@ OIDC.getCode = function()
  * @param  {string} id_token    - ID Token
  * @returns {Array} An array of the JWS compact serialization components (header, payload, signature)
  */
-OIDC.getIdTokenParts = function (id_token) {
-    var jws = new KJUR.jws.JWS();
-    jws.parseJWS(id_token);
-    return new Array(jws.parsedJWS.headS, jws.parsedJWS.payloadS, jws.parsedJWS.si);
+OIDC.getIdTokenParts = function (id_token)
+{
+    try {
+        var jws = new KJUR.jws.JWS();
+        jws.parseJWS(id_token);
+        return new Array(jws.parsedJWS.headS, jws.parsedJWS.payloadS, jws.parsedJWS.si);
+    } catch (e) {
+        throw new OidcException('Unable to split the ID Token string: ' + e.toString());
+    }
 };
 
 /**
@@ -703,10 +801,14 @@ OIDC.getIdTokenParts = function (id_token) {
  * @param {string} id_token     - ID Token
  * @returns {object}            - The ID Token payload JSON object
  */
-OIDC.getIdTokenPayload = function (id_token) {
-    var parts = this.getIdTokenParts(id_token);
-    if(parts)
-        return this.getJsonObject(parts[1]);
+OIDC.getIdTokenPayload = function (id_token)
+{
+    try {
+      var parts = this.getIdTokenParts(id_token);
+      if(parts) return this.getJsonObject(parts[1]);
+    } catch (e) {
+      throw new OidcException('Unable to get the contents of the ID Token payload: ' + e.toString());
+    }
 }
 
 /**
@@ -714,12 +816,17 @@ OIDC.getIdTokenPayload = function (id_token) {
  * @param {string} jsonS    - JSON string
  * @returns {object|null}   JSON object or null
  */
-OIDC.getJsonObject = function (jsonS) {
-    var jws = KJUR.jws.JWS;
-    if(jws.isSafeJSONString(jsonS)) {
+OIDC.getJsonObject = function (jsonS)
+{
+    try {
+      var jws = KJUR.jws.JWS;
+      if(jws.isSafeJSONString(jsonS)) {
         return jws.readSafeJSONString(jsonS);
+      }
+    } catch (e) {
+      throw new OidcException('Unable to get the JSON object from JSON string: ' + e.toString());
+      return null;
     }
-    return null;
 //    return JSON.parse(jsonS);
 };
 
@@ -758,56 +865,60 @@ OIDC.fetchJSON = function(url) {
  */
 OIDC.jwk_get_key = function(jwkIn, kty, use, kid )
 {
-    var jwk = null;
-    var foundKeys = [];
+    try {
+      var jwk = null;
+      var foundKeys = [];
 
-    if(jwkIn) {
+      if(jwkIn) {
         if(typeof jwkIn === 'string')
-            jwk = this.getJsonObject(jwkIn);
+        jwk = this.getJsonObject(jwkIn);
         else if(typeof jwkIn === 'object')
-            jwk = jwkIn;
+        jwk = jwkIn;
 
         if(jwk != null) {
-            if(typeof jwk['keys'] === 'object') {
-                if(jwk.keys.length == 0)
-                    return null;
+          if(typeof jwk['keys'] === 'object') {
+            if(jwk.keys.length == 0)
+            return null;
 
-                for(var i = 0; i < jwk.keys.length; i++) {
-                    if(jwk['keys'][i]['kty'] == kty)
-                        foundKeys.push(jwk.keys[i]);
-                }
-
-                if(foundKeys.length == 0)
-                    return null;
-
-                if(use) {
-                    var temp = [];
-                    for(var j = 0; j < foundKeys.length; j++) {
-                        if(!foundKeys[j]['use'])
-                            temp.push(foundKeys[j]);
-                        else if(foundKeys[j]['use'] == use)
-                            temp.push(foundKeys[j]);
-                    }
-                    foundKeys = temp;
-                }
-                if(foundKeys.length == 0)
-                    return null;
-
-                if(kid) {
-                    temp = [];
-                    for(var k = 0; k < foundKeys.length; k++) {
-                        if(foundKeys[k]['kid'] == kid)
-                            temp.push(foundKeys[k]);
-                    }
-                    foundKeys = temp;
-                }
-                if(foundKeys.length == 0)
-                    return null;
-                else
-                    return foundKeys;
+            for(var i = 0; i < jwk.keys.length; i++) {
+              if(jwk['keys'][i]['kty'] == kty)
+              foundKeys.push(jwk.keys[i]);
             }
+
+            if(foundKeys.length == 0)
+            return null;
+
+            if(use) {
+              var temp = [];
+              for(var j = 0; j < foundKeys.length; j++) {
+                if(!foundKeys[j]['use'])
+                temp.push(foundKeys[j]);
+                else if(foundKeys[j]['use'] == use)
+                temp.push(foundKeys[j]);
+              }
+              foundKeys = temp;
+            }
+            if(foundKeys.length == 0)
+            return null;
+
+            if(kid) {
+              temp = [];
+              for(var k = 0; k < foundKeys.length; k++) {
+                if(foundKeys[k]['kid'] == kid)
+                temp.push(foundKeys[k]);
+              }
+              foundKeys = temp;
+            }
+            if(foundKeys.length == 0)
+            return null;
+            else
+            return foundKeys;
+          }
         }
 
+      }
+    } catch (e) {
+        throw new OidcException('Unable to retrieve the JWK key: ' + e.toString());
     }
 
 };
@@ -822,16 +933,58 @@ OIDC.jwk_get_key = function(jwkIn, kty, use, kid )
  */
 OIDC.discover = function(issuer)
 {
-    var discovery = null;
-    if(issuer) {
-        var openidConfig = issuer + '/.well-known/openid-configuration';
-        var discoveryDoc = this.fetchJSON(openidConfig);
-        if(discoveryDoc)
-            discovery = this.getJsonObject(discoveryDoc)
+    try {
+        var discovery = null;
+        if(issuer) {
+          var openidConfig = issuer + '/.well-known/openid-configuration';
+          var discoveryDoc = this.fetchJSON(openidConfig);
+          if(discoveryDoc)
+          discovery = this.getJsonObject(discoveryDoc)
+        }
+        return discovery;
+    } catch (e) {
+        throw new OidcException('Unable to perform discovery: ' + e.toString());
     }
-    return discovery;
 };
 
+OIDC.getUserInfo = function(access_token)
+{
+  try {
+      var currentURL = window.location.href;
+      var providerURL = currentURL.match('https://([^/]*)')
+      var providerInfo = OIDC.discover(providerURL[0]);
+      var request = new XMLHttpRequest();
+      request.open('POST', providerInfo['userinfo_endpoint'], false);
+      request.setRequestHeader("authorization", "Bearer " + access_token);
+      request.send(null);
+
+      if (request.status === 200) {
+          return request.responseText;
+      } else
+          throw new OidcException("getUserInfo - " + request.status + ' ' + request.statusText);
+
+  }
+  catch(e) {
+      throw new OidcException('Unable to get user info:' + e.toString());
+  }
+}
+
+function getHTMLTableFromJSONObj(JSONObj)
+{
+    try {
+      var map = JSON.parse(JSONObj);
+      var HTMLString = '\n<table class="table table-striped">';
+      for (var claim in map){
+         HTMLString = HTMLString + '\n<TR><TD>' + claim + '</TD><TD>' + map[claim] + '</TD></TR>';
+      }
+      HTMLString = HTMLString + '\n</table>';
+      return HTMLString;
+    } catch (e) {
+      throw new OidcException('Unable to get JSON Obj to HTML table:' + e.toString());
+      return null;
+    }
+
+}
 
 /**
  * OidcException
@@ -858,20 +1011,16 @@ function namespace(namespaceString) {
         parent = parent[currentPart];
     }
     return parent;
-}/*  core-min.js  */
+}
+
+/*  core.js  */
 /*
-CryptoJS v3.1.2
-code.google.com/p/crypto-js
-(c) 2009-2013 by Jeff Mott. All rights reserved.
-code.google.com/p/crypto-js/wiki/License
+CryptoJS v3.1.9
+https://github.com/brix/crypto-js
+(c) 2009-2013 by Jeff Mott. (c) 2013-2016 Evan Vosberg. All rights reserved.
+https://github.com/brix/crypto-js
 */
-var CryptoJS=CryptoJS||function(h,r){var k={},l=k.lib={},n=function(){},f=l.Base={extend:function(a){n.prototype=this;var b=new n;a&&b.mixIn(a);b.hasOwnProperty("init")||(b.init=function(){b.$super.init.apply(this,arguments)});b.init.prototype=b;b.$super=this;return b},create:function(){var a=this.extend();a.init.apply(a,arguments);return a},init:function(){},mixIn:function(a){for(var b in a)a.hasOwnProperty(b)&&(this[b]=a[b]);a.hasOwnProperty("toString")&&(this.toString=a.toString)},clone:function(){return this.init.prototype.extend(this)}},
-j=l.WordArray=f.extend({init:function(a,b){a=this.words=a||[];this.sigBytes=b!=r?b:4*a.length},toString:function(a){return(a||s).stringify(this)},concat:function(a){var b=this.words,d=a.words,c=this.sigBytes;a=a.sigBytes;this.clamp();if(c%4)for(var e=0;e<a;e++)b[c+e>>>2]|=(d[e>>>2]>>>24-8*(e%4)&255)<<24-8*((c+e)%4);else if(65535<d.length)for(e=0;e<a;e+=4)b[c+e>>>2]=d[e>>>2];else b.push.apply(b,d);this.sigBytes+=a;return this},clamp:function(){var a=this.words,b=this.sigBytes;a[b>>>2]&=4294967295<<
-32-8*(b%4);a.length=h.ceil(b/4)},clone:function(){var a=f.clone.call(this);a.words=this.words.slice(0);return a},random:function(a){for(var b=[],d=0;d<a;d+=4)b.push(4294967296*h.random()|0);return new j.init(b,a)}}),m=k.enc={},s=m.Hex={stringify:function(a){var b=a.words;a=a.sigBytes;for(var d=[],c=0;c<a;c++){var e=b[c>>>2]>>>24-8*(c%4)&255;d.push((e>>>4).toString(16));d.push((e&15).toString(16))}return d.join("")},parse:function(a){for(var b=a.length,d=[],c=0;c<b;c+=2)d[c>>>3]|=parseInt(a.substr(c,
-2),16)<<24-4*(c%8);return new j.init(d,b/2)}},p=m.Latin1={stringify:function(a){var b=a.words;a=a.sigBytes;for(var d=[],c=0;c<a;c++)d.push(String.fromCharCode(b[c>>>2]>>>24-8*(c%4)&255));return d.join("")},parse:function(a){for(var b=a.length,d=[],c=0;c<b;c++)d[c>>>2]|=(a.charCodeAt(c)&255)<<24-8*(c%4);return new j.init(d,b)}},t=m.Utf8={stringify:function(a){try{return decodeURIComponent(escape(p.stringify(a)))}catch(b){throw Error("Malformed UTF-8 data");}},parse:function(a){return p.parse(unescape(encodeURIComponent(a)))}},
-q=l.BufferedBlockAlgorithm=f.extend({reset:function(){this._data=new j.init;this._nDataBytes=0},_append:function(a){"string"==typeof a&&(a=t.parse(a));this._data.concat(a);this._nDataBytes+=a.sigBytes},_process:function(a){var b=this._data,d=b.words,c=b.sigBytes,e=this.blockSize,f=c/(4*e),f=a?h.ceil(f):h.max((f|0)-this._minBufferSize,0);a=f*e;c=h.min(4*a,c);if(a){for(var g=0;g<a;g+=e)this._doProcessBlock(d,g);g=d.splice(0,a);b.sigBytes-=c}return new j.init(g,c)},clone:function(){var a=f.clone.call(this);
-a._data=this._data.clone();return a},_minBufferSize:0});l.Hasher=q.extend({cfg:f.extend(),init:function(a){this.cfg=this.cfg.extend(a);this.reset()},reset:function(){q.reset.call(this);this._doReset()},update:function(a){this._append(a);this._process();return this},finalize:function(a){a&&this._append(a);return this._doFinalize()},blockSize:16,_createHelper:function(a){return function(b,d){return(new a.init(d)).finalize(b)}},_createHmacHelper:function(a){return function(b,d){return(new u.HMAC.init(a,
-d)).finalize(b)}}});var u=k.algo={};return k}(Math);
+var CryptoJS=CryptoJS||function(a,b){var c=Object.create||function(){function a(){}return function(b){var c;return a.prototype=b,c=new a,a.prototype=null,c}}(),d={},e=d.lib={},f=e.Base=function(){return{extend:function(a){var b=c(this);return a&&b.mixIn(a),b.hasOwnProperty("init")&&this.init!==b.init||(b.init=function(){b.$super.init.apply(this,arguments)}),b.init.prototype=b,b.$super=this,b},create:function(){var a=this.extend();return a.init.apply(a,arguments),a},init:function(){},mixIn:function(a){for(var b in a)a.hasOwnProperty(b)&&(this[b]=a[b]);a.hasOwnProperty("toString")&&(this.toString=a.toString)},clone:function(){return this.init.prototype.extend(this)}}}(),g=e.WordArray=f.extend({init:function(a,c){a=this.words=a||[],c!=b?this.sigBytes=c:this.sigBytes=4*a.length},toString:function(a){return(a||i).stringify(this)},concat:function(a){var b=this.words,c=a.words,d=this.sigBytes,e=a.sigBytes;if(this.clamp(),d%4)for(var f=0;f<e;f++){var g=c[f>>>2]>>>24-f%4*8&255;b[d+f>>>2]|=g<<24-(d+f)%4*8}else for(var f=0;f<e;f+=4)b[d+f>>>2]=c[f>>>2];return this.sigBytes+=e,this},clamp:function(){var b=this.words,c=this.sigBytes;b[c>>>2]&=4294967295<<32-c%4*8,b.length=a.ceil(c/4)},clone:function(){var a=f.clone.call(this);return a.words=this.words.slice(0),a},random:function(b){for(var f,c=[],d=function(b){var b=b,c=987654321,d=4294967295;return function(){c=36969*(65535&c)+(c>>16)&d,b=18e3*(65535&b)+(b>>16)&d;var e=(c<<16)+b&d;return e/=4294967296,e+=.5,e*(a.random()>.5?1:-1)}},e=0;e<b;e+=4){var h=d(4294967296*(f||a.random()));f=987654071*h(),c.push(4294967296*h()|0)}return new g.init(c,b)}}),h=d.enc={},i=h.Hex={stringify:function(a){for(var b=a.words,c=a.sigBytes,d=[],e=0;e<c;e++){var f=b[e>>>2]>>>24-e%4*8&255;d.push((f>>>4).toString(16)),d.push((15&f).toString(16))}return d.join("")},parse:function(a){for(var b=a.length,c=[],d=0;d<b;d+=2)c[d>>>3]|=parseInt(a.substr(d,2),16)<<24-d%8*4;return new g.init(c,b/2)}},j=h.Latin1={stringify:function(a){for(var b=a.words,c=a.sigBytes,d=[],e=0;e<c;e++){var f=b[e>>>2]>>>24-e%4*8&255;d.push(String.fromCharCode(f))}return d.join("")},parse:function(a){for(var b=a.length,c=[],d=0;d<b;d++)c[d>>>2]|=(255&a.charCodeAt(d))<<24-d%4*8;return new g.init(c,b)}},k=h.Utf8={stringify:function(a){try{return decodeURIComponent(escape(j.stringify(a)))}catch(a){throw new Error("Malformed UTF-8 data")}},parse:function(a){return j.parse(unescape(encodeURIComponent(a)))}},l=e.BufferedBlockAlgorithm=f.extend({reset:function(){this._data=new g.init,this._nDataBytes=0},_append:function(a){"string"==typeof a&&(a=k.parse(a)),this._data.concat(a),this._nDataBytes+=a.sigBytes},_process:function(b){var c=this._data,d=c.words,e=c.sigBytes,f=this.blockSize,h=4*f,i=e/h;i=b?a.ceil(i):a.max((0|i)-this._minBufferSize,0);var j=i*f,k=a.min(4*j,e);if(j){for(var l=0;l<j;l+=f)this._doProcessBlock(d,l);var m=d.splice(0,j);c.sigBytes-=k}return new g.init(m,k)},clone:function(){var a=f.clone.call(this);return a._data=this._data.clone(),a},_minBufferSize:0}),n=(e.Hasher=l.extend({cfg:f.extend(),init:function(a){this.cfg=this.cfg.extend(a),this.reset()},reset:function(){l.reset.call(this),this._doReset()},update:function(a){return this._append(a),this._process(),this},finalize:function(a){a&&this._append(a);var b=this._doFinalize();return b},blockSize:16,_createHelper:function(a){return function(b,c){return new a.init(c).finalize(b)}},_createHmacHelper:function(a){return function(b,c){return new n.HMAC.init(a,c).finalize(b)}}}),d.algo={});return d}(Math);
 
 /*  sha1-min.js  */
 /*
@@ -959,22 +1108,21 @@ function _rsapem_pemToBase64(b){var a=b;a=a.replace("-----BEGIN RSA PRIVATE KEY-
  */
 var _RE_HEXDECONLY=new RegExp("");_RE_HEXDECONLY.compile("[^0-9a-f]","gi");function _rsasign_getHexPaddedDigestInfoForString(d,e,a){var b=function(f){return KJUR.crypto.Util.hashString(f,a)};var c=b(d);return KJUR.crypto.Util.getPaddedDigestInfoHex(c,a,e)}function _zeroPaddingOfSignature(e,d){var c="";var a=d/4-e.length;for(var b=0;b<a;b++){c=c+"0"}return c+e}function _rsasign_signString(d,a){var b=function(e){return KJUR.crypto.Util.hashString(e,a)};var c=b(d);return this.signWithMessageHash(c,a)}function _rsasign_signWithMessageHash(e,c){var f=KJUR.crypto.Util.getPaddedDigestInfoHex(e,c,this.n.bitLength());var b=parseBigInt(f,16);var d=this.doPrivate(b);var a=d.toString(16);return _zeroPaddingOfSignature(a,this.n.bitLength())}function _rsasign_signStringWithSHA1(a){return _rsasign_signString.call(this,a,"sha1")}function _rsasign_signStringWithSHA256(a){return _rsasign_signString.call(this,a,"sha256")}function pss_mgf1_str(c,a,e){var b="",d=0;while(b.length<a){b+=hextorstr(e(rstrtohex(c+String.fromCharCode.apply(String,[(d&4278190080)>>24,(d&16711680)>>16,(d&65280)>>8,d&255]))));d+=1}return b}function _rsasign_signStringPSS(e,a,d){var c=function(f){return KJUR.crypto.Util.hashHex(f,a)};var b=c(rstrtohex(e));if(d===undefined){d=-1}return this.signWithMessageHashPSS(b,a,d)}function _rsasign_signWithMessageHashPSS(l,a,k){var b=hextorstr(l);var g=b.length;var m=this.n.bitLength()-1;var c=Math.ceil(m/8);var d;var o=function(i){return KJUR.crypto.Util.hashHex(i,a)};if(k===-1||k===undefined){k=g}else{if(k===-2){k=c-g-2}else{if(k<-2){throw"invalid salt length"}}}if(c<(g+k+2)){throw"data too long"}var f="";if(k>0){f=new Array(k);new SecureRandom().nextBytes(f);f=String.fromCharCode.apply(String,f)}var n=hextorstr(o(rstrtohex("\x00\x00\x00\x00\x00\x00\x00\x00"+b+f)));var j=[];for(d=0;d<c-k-g-2;d+=1){j[d]=0}var e=String.fromCharCode.apply(String,j)+"\x01"+f;var h=pss_mgf1_str(n,e.length,o);var q=[];for(d=0;d<e.length;d+=1){q[d]=e.charCodeAt(d)^h.charCodeAt(d)}var p=(65280>>(8*c-m))&255;q[0]&=~p;for(d=0;d<g;d++){q.push(n.charCodeAt(d))}q.push(188);return _zeroPaddingOfSignature(this.doPrivate(new BigInteger(q)).toString(16),this.n.bitLength())}function _rsasign_getDecryptSignatureBI(a,d,c){var b=new RSAKey();b.setPublic(d,c);var e=b.doPublic(a);return e}function _rsasign_getHexDigestInfoFromSig(a,c,b){var e=_rsasign_getDecryptSignatureBI(a,c,b);var d=e.toString(16).replace(/^1f+00/,"");return d}function _rsasign_getAlgNameAndHashFromHexDisgestInfo(f){for(var e in KJUR.crypto.Util.DIGESTINFOHEAD){var d=KJUR.crypto.Util.DIGESTINFOHEAD[e];var b=d.length;if(f.substring(0,b)==d){var c=[e,f.substring(b)];return c}}return[]}function _rsasign_verifySignatureWithArgs(f,b,g,j){var e=_rsasign_getHexDigestInfoFromSig(b,g,j);var h=_rsasign_getAlgNameAndHashFromHexDisgestInfo(e);if(h.length==0){return false}var d=h[0];var i=h[1];var a=function(k){return KJUR.crypto.Util.hashString(k,d)};var c=a(f);return(i==c)}function _rsasign_verifyHexSignatureForMessage(c,b){var d=parseBigInt(c,16);var a=_rsasign_verifySignatureWithArgs(b,d,this.n.toString(16),this.e.toString(16));return a}function _rsasign_verifyString(f,j){j=j.replace(_RE_HEXDECONLY,"");j=j.replace(/[ \n]+/g,"");var b=parseBigInt(j,16);if(b.bitLength()>this.n.bitLength()){return 0}var i=this.doPublic(b);var e=i.toString(16).replace(/^1f+00/,"");var g=_rsasign_getAlgNameAndHashFromHexDisgestInfo(e);if(g.length==0){return false}var d=g[0];var h=g[1];var a=function(k){return KJUR.crypto.Util.hashString(k,d)};var c=a(f);return(h==c)}function _rsasign_verifyWithMessageHash(e,a){a=a.replace(_RE_HEXDECONLY,"");a=a.replace(/[ \n]+/g,"");var b=parseBigInt(a,16);if(b.bitLength()>this.n.bitLength()){return 0}var h=this.doPublic(b);var g=h.toString(16).replace(/^1f+00/,"");var c=_rsasign_getAlgNameAndHashFromHexDisgestInfo(g);if(c.length==0){return false}var d=c[0];var f=c[1];return(f==e)}function _rsasign_verifyStringPSS(c,b,a,f){var e=function(g){return KJUR.crypto.Util.hashHex(g,a)};var d=e(rstrtohex(c));if(f===undefined){f=-1}return this.verifyWithMessageHashPSS(d,b,a,f)}function _rsasign_verifyWithMessageHashPSS(f,s,l,c){var k=new BigInteger(s,16);if(k.bitLength()>this.n.bitLength()){return false}var r=function(i){return KJUR.crypto.Util.hashHex(i,l)};var j=hextorstr(f);var h=j.length;var g=this.n.bitLength()-1;var m=Math.ceil(g/8);var q;if(c===-1||c===undefined){c=h}else{if(c===-2){c=m-h-2}else{if(c<-2){throw"invalid salt length"}}}if(m<(h+c+2)){throw"data too long"}var a=this.doPublic(k).toByteArray();for(q=0;q<a.length;q+=1){a[q]&=255}while(a.length<m){a.unshift(0)}if(a[m-1]!==188){throw"encoded message does not end in 0xbc"}a=String.fromCharCode.apply(String,a);var d=a.substr(0,m-h-1);var e=a.substr(d.length,h);var p=(65280>>(8*m-g))&255;if((d.charCodeAt(0)&p)!==0){throw"bits beyond keysize not zero"}var n=pss_mgf1_str(e,d.length,r);var o=[];for(q=0;q<d.length;q+=1){o[q]=d.charCodeAt(q)^n.charCodeAt(q)}o[0]&=~p;var b=m-h-c-2;for(q=0;q<b;q+=1){if(o[q]!==0){throw"leftmost octets not zero"}}if(o[b]!==1){throw"0x01 marker not found"}return e===hextorstr(r(rstrtohex("\x00\x00\x00\x00\x00\x00\x00\x00"+j+String.fromCharCode.apply(String,o.slice(-c)))))}RSAKey.prototype.signWithMessageHash=_rsasign_signWithMessageHash;RSAKey.prototype.signString=_rsasign_signString;RSAKey.prototype.signStringWithSHA1=_rsasign_signStringWithSHA1;RSAKey.prototype.signStringWithSHA256=_rsasign_signStringWithSHA256;RSAKey.prototype.sign=_rsasign_signString;RSAKey.prototype.signWithSHA1=_rsasign_signStringWithSHA1;RSAKey.prototype.signWithSHA256=_rsasign_signStringWithSHA256;RSAKey.prototype.signWithMessageHashPSS=_rsasign_signWithMessageHashPSS;RSAKey.prototype.signStringPSS=_rsasign_signStringPSS;RSAKey.prototype.signPSS=_rsasign_signStringPSS;RSAKey.SALT_LEN_HLEN=-1;RSAKey.SALT_LEN_MAX=-2;RSAKey.prototype.verifyWithMessageHash=_rsasign_verifyWithMessageHash;RSAKey.prototype.verifyString=_rsasign_verifyString;RSAKey.prototype.verifyHexSignatureForMessage=_rsasign_verifyHexSignatureForMessage;RSAKey.prototype.verify=_rsasign_verifyString;RSAKey.prototype.verifyHexSignatureForByteArrayMessage=_rsasign_verifyHexSignatureForMessage;RSAKey.prototype.verifyWithMessageHashPSS=_rsasign_verifyWithMessageHashPSS;RSAKey.prototype.verifyStringPSS=_rsasign_verifyStringPSS;RSAKey.prototype.verifyPSS=_rsasign_verifyStringPSS;RSAKey.SALT_LEN_RECOVER=-2;
 /* asn1hex-1.1.min.js  */
-/*! asn1hex-1.1.5.js (c) 2012-2014 Kenji Urushima | kjur.github.com/jsrsasign/license
+/*! asn1hex-1.1.8.js (c) 2012-2016 Kenji Urushima | kjur.github.com/jsrsasign/license
  */
-var ASN1HEX=new function(){this.getByteLengthOfL_AtObj=function(b,c){if(b.substring(c+2,c+3)!="8"){return 1}var a=parseInt(b.substring(c+3,c+4));if(a==0){return -1}if(0<a&&a<10){return a+1}return -2};this.getHexOfL_AtObj=function(b,c){var a=this.getByteLengthOfL_AtObj(b,c);if(a<1){return""}return b.substring(c+2,c+2+a*2)};this.getIntOfL_AtObj=function(c,d){var b=this.getHexOfL_AtObj(c,d);if(b==""){return -1}var a;if(parseInt(b.substring(0,1))<8){a=new BigInteger(b,16)}else{a=new BigInteger(b.substring(2),16)}return a.intValue()};this.getStartPosOfV_AtObj=function(b,c){var a=this.getByteLengthOfL_AtObj(b,c);if(a<0){return a}return c+(a+1)*2};this.getHexOfV_AtObj=function(c,d){var b=this.getStartPosOfV_AtObj(c,d);var a=this.getIntOfL_AtObj(c,d);return c.substring(b,b+a*2)};this.getHexOfTLV_AtObj=function(c,e){var b=c.substr(e,2);var d=this.getHexOfL_AtObj(c,e);var a=this.getHexOfV_AtObj(c,e);return b+d+a};this.getPosOfNextSibling_AtObj=function(c,d){var b=this.getStartPosOfV_AtObj(c,d);var a=this.getIntOfL_AtObj(c,d);return b+a*2};this.getPosArrayOfChildren_AtObj=function(f,j){var c=new Array();var i=this.getStartPosOfV_AtObj(f,j);c.push(i);var b=this.getIntOfL_AtObj(f,j);var g=i;var d=0;while(1){var e=this.getPosOfNextSibling_AtObj(f,g);if(e==null||(e-i>=(b*2))){break}if(d>=200){break}c.push(e);g=e;d++}return c};this.getNthChildIndex_AtObj=function(d,b,e){var c=this.getPosArrayOfChildren_AtObj(d,b);return c[e]};this.getDecendantIndexByNthList=function(e,d,c){if(c.length==0){return d}var f=c.shift();var b=this.getPosArrayOfChildren_AtObj(e,d);return this.getDecendantIndexByNthList(e,b[f],c)};this.getDecendantHexTLVByNthList=function(d,c,b){var a=this.getDecendantIndexByNthList(d,c,b);return this.getHexOfTLV_AtObj(d,a)};this.getDecendantHexVByNthList=function(d,c,b){var a=this.getDecendantIndexByNthList(d,c,b);return this.getHexOfV_AtObj(d,a)}};ASN1HEX.getVbyList=function(d,c,b,e){var a=this.getDecendantIndexByNthList(d,c,b);if(a===undefined){throw"can't find nthList object"}if(e!==undefined){if(d.substr(a,2)!=e){throw"checking tag doesn't match: "+d.substr(a,2)+"!="+e}}return this.getHexOfV_AtObj(d,a)};ASN1HEX.hextooidstr=function(e){var h=function(b,a){if(b.length>=a){return b}return new Array(a-b.length+1).join("0")+b};var l=[];var o=e.substr(0,2);var f=parseInt(o,16);l[0]=new String(Math.floor(f/40));l[1]=new String(f%40);var m=e.substr(2);var k=[];for(var g=0;g<m.length/2;g++){k.push(parseInt(m.substr(g*2,2),16))}var j=[];var d="";for(var g=0;g<k.length;g++){if(k[g]&128){d=d+h((k[g]&127).toString(2),7)}else{d=d+h((k[g]&127).toString(2),7);j.push(new String(parseInt(d,2)));d=""}}var n=l.join(".");if(j.length>0){n=n+"."+j.join(".")}return n};
+var ASN1HEX=new function(){};ASN1HEX.getByteLengthOfL_AtObj=function(a,b){if("8"!=a.substring(b+2,b+3))return 1;var c=parseInt(a.substring(b+3,b+4));return 0==c?-1:0<c&&c<10?c+1:-2},ASN1HEX.getHexOfL_AtObj=function(a,b){var c=ASN1HEX.getByteLengthOfL_AtObj(a,b);return c<1?"":a.substring(b+2,b+2+2*c)},ASN1HEX.getIntOfL_AtObj=function(a,b){var c=ASN1HEX.getHexOfL_AtObj(a,b);if(""==c)return-1;var d;return d=parseInt(c.substring(0,1))<8?new BigInteger(c,16):new BigInteger(c.substring(2),16),d.intValue()},ASN1HEX.getStartPosOfV_AtObj=function(a,b){var c=ASN1HEX.getByteLengthOfL_AtObj(a,b);return c<0?c:b+2*(c+1)},ASN1HEX.getHexOfV_AtObj=function(a,b){var c=ASN1HEX.getStartPosOfV_AtObj(a,b),d=ASN1HEX.getIntOfL_AtObj(a,b);return a.substring(c,c+2*d)},ASN1HEX.getHexOfTLV_AtObj=function(a,b){var c=a.substr(b,2),d=ASN1HEX.getHexOfL_AtObj(a,b),e=ASN1HEX.getHexOfV_AtObj(a,b);return c+d+e},ASN1HEX.getPosOfNextSibling_AtObj=function(a,b){var c=ASN1HEX.getStartPosOfV_AtObj(a,b),d=ASN1HEX.getIntOfL_AtObj(a,b);return c+2*d},ASN1HEX.getPosArrayOfChildren_AtObj=function(a,b){var c=new Array,d=ASN1HEX.getStartPosOfV_AtObj(a,b);"03"==a.substr(b,2)?c.push(d+2):c.push(d);for(var e=ASN1HEX.getIntOfL_AtObj(a,b),f=d,g=0;;){var h=ASN1HEX.getPosOfNextSibling_AtObj(a,f);if(null==h||h-d>=2*e)break;if(g>=200)break;c.push(h),f=h,g++}return c},ASN1HEX.getNthChildIndex_AtObj=function(a,b,c){var d=ASN1HEX.getPosArrayOfChildren_AtObj(a,b);return d[c]},ASN1HEX.getDecendantIndexByNthList=function(a,b,c){if(0==c.length)return b;var d=c.shift(),e=ASN1HEX.getPosArrayOfChildren_AtObj(a,b);return ASN1HEX.getDecendantIndexByNthList(a,e[d],c)},ASN1HEX.getDecendantHexTLVByNthList=function(a,b,c){var d=ASN1HEX.getDecendantIndexByNthList(a,b,c);return ASN1HEX.getHexOfTLV_AtObj(a,d)},ASN1HEX.getDecendantHexVByNthList=function(a,b,c){var d=ASN1HEX.getDecendantIndexByNthList(a,b,c);return ASN1HEX.getHexOfV_AtObj(a,d)},ASN1HEX.getVbyList=function(a,b,c,d){var e=ASN1HEX.getDecendantIndexByNthList(a,b,c);if(void 0===e)throw"can't find nthList object";if(void 0!==d&&a.substr(e,2)!=d)throw"checking tag doesn't match: "+a.substr(e,2)+"!="+d;return ASN1HEX.getHexOfV_AtObj(a,e)},ASN1HEX.hextooidstr=function(a){var b=function(a,b){return a.length>=b?a:new Array(b-a.length+1).join("0")+a},c=[],d=a.substr(0,2),e=parseInt(d,16);c[0]=new String(Math.floor(e/40)),c[1]=new String(e%40);for(var f=a.substr(2),g=[],h=0;h<f.length/2;h++)g.push(parseInt(f.substr(2*h,2),16));for(var i=[],j="",h=0;h<g.length;h++)128&g[h]?j+=b((127&g[h]).toString(2),7):(j+=b((127&g[h]).toString(2),7),i.push(new String(parseInt(j,2))),j="");var k=c.join(".");return i.length>0&&(k=k+"."+i.join(".")),k},ASN1HEX.dump=function(a,b,c,d){var e=a;a instanceof KJUR.asn1.ASN1Object&&(e=a.getEncodedHex());var f=function(a,b){if(a.length<=2*b)return a;var c=a.substr(0,b)+"..(total "+a.length/2+"bytes).."+a.substr(a.length-b,b);return c};void 0===b&&(b={ommit_long_octet:32}),void 0===c&&(c=0),void 0===d&&(d="");var g=b.ommit_long_octet;if("01"==e.substr(c,2)){var h=ASN1HEX.getHexOfV_AtObj(e,c);return"00"==h?d+"BOOLEAN FALSE\n":d+"BOOLEAN TRUE\n"}if("02"==e.substr(c,2)){var h=ASN1HEX.getHexOfV_AtObj(e,c);return d+"INTEGER "+f(h,g)+"\n"}if("03"==e.substr(c,2)){var h=ASN1HEX.getHexOfV_AtObj(e,c);return d+"BITSTRING "+f(h,g)+"\n"}if("04"==e.substr(c,2)){var h=ASN1HEX.getHexOfV_AtObj(e,c);if(ASN1HEX.isASN1HEX(h)){var i=d+"OCTETSTRING, encapsulates\n";return i+=ASN1HEX.dump(h,b,0,d+"  ")}return d+"OCTETSTRING "+f(h,g)+"\n"}if("05"==e.substr(c,2))return d+"NULL\n";if("06"==e.substr(c,2)){var j=ASN1HEX.getHexOfV_AtObj(e,c),k=KJUR.asn1.ASN1Util.oidHexToInt(j),l=KJUR.asn1.x509.OID.oid2name(k),m=k.replace(/\./g," ");return""!=l?d+"ObjectIdentifier "+l+" ("+m+")\n":d+"ObjectIdentifier ("+m+")\n"}if("0c"==e.substr(c,2))return d+"UTF8String '"+hextoutf8(ASN1HEX.getHexOfV_AtObj(e,c))+"'\n";if("13"==e.substr(c,2))return d+"PrintableString '"+hextoutf8(ASN1HEX.getHexOfV_AtObj(e,c))+"'\n";if("14"==e.substr(c,2))return d+"TeletexString '"+hextoutf8(ASN1HEX.getHexOfV_AtObj(e,c))+"'\n";if("16"==e.substr(c,2))return d+"IA5String '"+hextoutf8(ASN1HEX.getHexOfV_AtObj(e,c))+"'\n";if("17"==e.substr(c,2))return d+"UTCTime "+hextoutf8(ASN1HEX.getHexOfV_AtObj(e,c))+"\n";if("18"==e.substr(c,2))return d+"GeneralizedTime "+hextoutf8(ASN1HEX.getHexOfV_AtObj(e,c))+"\n";if("30"==e.substr(c,2)){if("3000"==e.substr(c,4))return d+"SEQUENCE {}\n";var i=d+"SEQUENCE\n",n=ASN1HEX.getPosArrayOfChildren_AtObj(e,c),o=b;if((2==n.length||3==n.length)&&"06"==e.substr(n[0],2)&&"04"==e.substr(n[n.length-1],2)){var p=ASN1HEX.getHexOfV_AtObj(e,n[0]),k=KJUR.asn1.ASN1Util.oidHexToInt(p),l=KJUR.asn1.x509.OID.oid2name(k),q=JSON.parse(JSON.stringify(b));q.x509ExtName=l,o=q}for(var r=0;r<n.length;r++)i+=ASN1HEX.dump(e,o,n[r],d+"  ");return i}if("31"==e.substr(c,2)){for(var i=d+"SET\n",n=ASN1HEX.getPosArrayOfChildren_AtObj(e,c),r=0;r<n.length;r++)i+=ASN1HEX.dump(e,b,n[r],d+"  ");return i}var s=parseInt(e.substr(c,2),16);if(0!=(128&s)){var t=31&s;if(0!=(32&s)){for(var i=d+"["+t+"]\n",n=ASN1HEX.getPosArrayOfChildren_AtObj(e,c),r=0;r<n.length;r++)i+=ASN1HEX.dump(e,b,n[r],d+"  ");return i}var h=ASN1HEX.getHexOfV_AtObj(e,c);"68747470"==h.substr(0,8)&&(h=hextoutf8(h)),"subjectAltName"===b.x509ExtName&&2==t&&(h=hextoutf8(h));var i=d+"["+t+"] "+h+"\n";return i}return d+"UNKNOWN("+e.substr(c,2)+") "+ASN1HEX.getHexOfV_AtObj(e,c)+"\n"},ASN1HEX.isASN1HEX=function(a){if(a.length%2==1)return!1;var b=ASN1HEX.getIntOfL_AtObj(a,0),c=a.substr(0,2),d=ASN1HEX.getHexOfL_AtObj(a,0),e=a.length-c.length-d.length;return e==2*b};
 /* x509-1.1.min.js  */
-/*! x509-1.1.3.js (c) 2012-2014 Kenji Urushima | kjur.github.com/jsrsasign/license
+/*! x509-1.1.10.js (c) 2012-2016 Kenji Urushima | kjur.github.com/jsrsasign/license
  */
-function X509(){this.subjectPublicKeyRSA=null;this.subjectPublicKeyRSA_hN=null;this.subjectPublicKeyRSA_hE=null;this.hex=null;this.getSerialNumberHex=function(){return ASN1HEX.getDecendantHexVByNthList(this.hex,0,[0,1])};this.getIssuerHex=function(){return ASN1HEX.getDecendantHexTLVByNthList(this.hex,0,[0,3])};this.getIssuerString=function(){return X509.hex2dn(ASN1HEX.getDecendantHexTLVByNthList(this.hex,0,[0,3]))};this.getSubjectHex=function(){return ASN1HEX.getDecendantHexTLVByNthList(this.hex,0,[0,5])};this.getSubjectString=function(){return X509.hex2dn(ASN1HEX.getDecendantHexTLVByNthList(this.hex,0,[0,5]))};this.getNotBefore=function(){var a=ASN1HEX.getDecendantHexVByNthList(this.hex,0,[0,4,0]);a=a.replace(/(..)/g,"%$1");a=decodeURIComponent(a);return a};this.getNotAfter=function(){var a=ASN1HEX.getDecendantHexVByNthList(this.hex,0,[0,4,1]);a=a.replace(/(..)/g,"%$1");a=decodeURIComponent(a);return a};this.readCertPEM=function(c){var e=X509.pemToHex(c);var b=X509.getPublicKeyHexArrayFromCertHex(e);var d=new RSAKey();d.setPublic(b[0],b[1]);this.subjectPublicKeyRSA=d;this.subjectPublicKeyRSA_hN=b[0];this.subjectPublicKeyRSA_hE=b[1];this.hex=e};this.readCertPEMWithoutRSAInit=function(c){var d=X509.pemToHex(c);var b=X509.getPublicKeyHexArrayFromCertHex(d);this.subjectPublicKeyRSA.setPublic(b[0],b[1]);this.subjectPublicKeyRSA_hN=b[0];this.subjectPublicKeyRSA_hE=b[1];this.hex=d}}X509.pemToBase64=function(a){var b=a;b=b.replace("-----BEGIN CERTIFICATE-----","");b=b.replace("-----END CERTIFICATE-----","");b=b.replace(/[ \n]+/g,"");return b};X509.pemToHex=function(a){var c=X509.pemToBase64(a);var b=b64tohex(c);return b};X509.getSubjectPublicKeyPosFromCertHex=function(f){var e=X509.getSubjectPublicKeyInfoPosFromCertHex(f);if(e==-1){return -1}var b=ASN1HEX.getPosArrayOfChildren_AtObj(f,e);if(b.length!=2){return -1}var d=b[1];if(f.substring(d,d+2)!="03"){return -1}var c=ASN1HEX.getStartPosOfV_AtObj(f,d);if(f.substring(c,c+2)!="00"){return -1}return c+2};X509.getSubjectPublicKeyInfoPosFromCertHex=function(d){var c=ASN1HEX.getStartPosOfV_AtObj(d,0);var b=ASN1HEX.getPosArrayOfChildren_AtObj(d,c);if(b.length<1){return -1}if(d.substring(b[0],b[0]+10)=="a003020102"){if(b.length<6){return -1}return b[6]}else{if(b.length<5){return -1}return b[5]}};X509.getPublicKeyHexArrayFromCertHex=function(f){var e=X509.getSubjectPublicKeyPosFromCertHex(f);var b=ASN1HEX.getPosArrayOfChildren_AtObj(f,e);if(b.length!=2){return[]}var d=ASN1HEX.getHexOfV_AtObj(f,b[0]);var c=ASN1HEX.getHexOfV_AtObj(f,b[1]);if(d!=null&&c!=null){return[d,c]}else{return[]}};X509.getHexTbsCertificateFromCert=function(b){var a=ASN1HEX.getStartPosOfV_AtObj(b,0);return a};X509.getPublicKeyHexArrayFromCertPEM=function(c){var d=X509.pemToHex(c);var b=X509.getPublicKeyHexArrayFromCertHex(d);return b};X509.hex2dn=function(e){var f="";var c=ASN1HEX.getPosArrayOfChildren_AtObj(e,0);for(var d=0;d<c.length;d++){var b=ASN1HEX.getHexOfTLV_AtObj(e,c[d]);f=f+"/"+X509.hex2rdn(b)}return f};X509.hex2rdn=function(a){var f=ASN1HEX.getDecendantHexTLVByNthList(a,0,[0,0]);var e=ASN1HEX.getDecendantHexVByNthList(a,0,[0,1]);var c="";try{c=X509.DN_ATTRHEX[f]}catch(b){c=f}e=e.replace(/(..)/g,"%$1");var d=decodeURIComponent(e);return c+"="+d};X509.DN_ATTRHEX={"0603550406":"C","060355040a":"O","060355040b":"OU","0603550403":"CN","0603550405":"SN","0603550408":"ST","0603550407":"L",};X509.getPublicKeyFromCertPEM=function(f){var c=X509.getPublicKeyInfoPropOfCertPEM(f);if(c.algoid=="2a864886f70d010101"){var i=KEYUTIL.parsePublicRawRSAKeyHex(c.keyhex);var j=new RSAKey();j.setPublic(i.n,i.e);return j}else{if(c.algoid=="2a8648ce3d0201"){var e=KJUR.crypto.OID.oidhex2name[c.algparam];var j=new KJUR.crypto.ECDSA({curve:e,info:c.keyhex});j.setPublicKeyHex(c.keyhex);return j}else{if(c.algoid=="2a8648ce380401"){var b=ASN1HEX.getVbyList(c.algparam,0,[0],"02");var a=ASN1HEX.getVbyList(c.algparam,0,[1],"02");var d=ASN1HEX.getVbyList(c.algparam,0,[2],"02");var h=ASN1HEX.getHexOfV_AtObj(c.keyhex,0);h=h.substr(2);var j=new KJUR.crypto.DSA();j.setPublic(new BigInteger(b,16),new BigInteger(a,16),new BigInteger(d,16),new BigInteger(h,16));return j}else{throw"unsupported key"}}}};X509.getPublicKeyInfoPropOfCertPEM=function(e){var c={};c.algparam=null;var g=X509.pemToHex(e);var d=ASN1HEX.getPosArrayOfChildren_AtObj(g,0);if(d.length!=3){throw"malformed X.509 certificate PEM (code:001)"}if(g.substr(d[0],2)!="30"){throw"malformed X.509 certificate PEM (code:002)"}var b=ASN1HEX.getPosArrayOfChildren_AtObj(g,d[0]);if(b.length<7){throw"malformed X.509 certificate PEM (code:003)"}var h=ASN1HEX.getPosArrayOfChildren_AtObj(g,b[6]);if(h.length!=2){throw"malformed X.509 certificate PEM (code:004)"}var f=ASN1HEX.getPosArrayOfChildren_AtObj(g,h[0]);if(f.length!=2){throw"malformed X.509 certificate PEM (code:005)"}c.algoid=ASN1HEX.getHexOfV_AtObj(g,f[0]);if(g.substr(f[1],2)=="06"){c.algparam=ASN1HEX.getHexOfV_AtObj(g,f[1])}else{if(g.substr(f[1],2)=="30"){c.algparam=ASN1HEX.getHexOfTLV_AtObj(g,f[1])}}if(g.substr(h[1],2)!="03"){throw"malformed X.509 certificate PEM (code:006)"}var a=ASN1HEX.getHexOfV_AtObj(g,h[1]);c.keyhex=a.substr(2);return c};
+function X509() { this.subjectPublicKeyRSA = null; this.subjectPublicKeyRSA_hN = null; this.subjectPublicKeyRSA_hE = null; this.hex = null; this.getSerialNumberHex = function() { return ASN1HEX.getDecendantHexVByNthList(this.hex, 0, [0, 1]); }; this.getSignatureAlgorithmField = function() { var sigAlgOidHex = ASN1HEX.getDecendantHexVByNthList(this.hex, 0, [0, 2, 0]); var sigAlgOidInt = KJUR.asn1.ASN1Util.oidHexToInt(sigAlgOidHex); var sigAlgName = KJUR.asn1.x509.OID.oid2name(sigAlgOidInt); return sigAlgName; }; this.getIssuerHex = function() { return ASN1HEX.getDecendantHexTLVByNthList(this.hex, 0, [0, 3]); }; this.getIssuerString = function() { return X509.hex2dn(ASN1HEX.getDecendantHexTLVByNthList(this.hex, 0, [0, 3])); }; this.getSubjectHex = function() { return ASN1HEX.getDecendantHexTLVByNthList(this.hex, 0, [0, 5]); }; this.getSubjectString = function() { return X509.hex2dn(ASN1HEX.getDecendantHexTLVByNthList(this.hex, 0, [0, 5])); }; this.getNotBefore = function() { var s = ASN1HEX.getDecendantHexVByNthList(this.hex, 0, [0, 4, 0]); s = s.replace(/(..)/g, "%$1"); s = decodeURIComponent(s); return s; }; this.getNotAfter = function() { var s = ASN1HEX.getDecendantHexVByNthList(this.hex, 0, [0, 4, 1]); s = s.replace(/(..)/g, "%$1"); s = decodeURIComponent(s); return s; }; this.readCertPEM = function(sCertPEM) { var hCert = X509.pemToHex(sCertPEM); var a = X509.getPublicKeyHexArrayFromCertHex(hCert); var rsa = new RSAKey(); rsa.setPublic(a[0], a[1]); this.subjectPublicKeyRSA = rsa; this.subjectPublicKeyRSA_hN = a[0]; this.subjectPublicKeyRSA_hE = a[1]; this.hex = hCert; }; this.readCertPEMWithoutRSAInit = function(sCertPEM) { var hCert = X509.pemToHex(sCertPEM); var a = X509.getPublicKeyHexArrayFromCertHex(hCert); if (typeof this.subjectPublicKeyRSA.setPublic === "function") { this.subjectPublicKeyRSA.setPublic(a[0], a[1]); } this.subjectPublicKeyRSA_hN = a[0]; this.subjectPublicKeyRSA_hE = a[1]; this.hex = hCert; }; this.getInfo = function() { var s = "Basic Fields\n"; s += " serial number: " + this.getSerialNumberHex() + "\n"; s += " signature algorithm: " + this.getSignatureAlgorithmField() + "\n"; s += " issuer: " + this.getIssuerString() + "\n"; s += " notBefore: " + this.getNotBefore() + "\n"; s += " notAfter: " + this.getNotAfter() + "\n"; s += " subject: " + this.getSubjectString() + "\n"; s += " subject public key info: " + "\n"; var pSPKI = X509.getSubjectPublicKeyInfoPosFromCertHex(this.hex); var hSPKI = ASN1HEX.getHexOfTLV_AtObj(this.hex, pSPKI); var keyObj = KEYUTIL.getKey(hSPKI, null, "pkcs8pub"); if (keyObj instanceof RSAKey) { s += " key algorithm: RSA\n"; s += " n=" + keyObj.n.toString(16).substr(0, 16) + "...\n"; s += " e=" + keyObj.e.toString(16) + "\n"; } s += "X509v3 Extensions:\n"; var aExt = X509.getV3ExtInfoListOfCertHex(this.hex); for (var i = 0; i < aExt.length; i++) { var info = aExt[i]; var extName = KJUR.asn1.x509.OID.oid2name(info["oid"]); if (extName === '') extName = info["oid"]; var critical = ''; if (info["critical"] === true) critical = "CRITICAL"; s += " " + extName + " " + critical + ":\n"; if (extName === "basicConstraints") { var bc = X509.getExtBasicConstraints(this.hex); if (bc.cA === undefined) { s += " {}\n"; } else { s += " cA=true"; if (bc.pathLen !== undefined) s += ", pathLen=" + bc.pathLen; s += "\n"; } } else if (extName === "keyUsage") { s += " " + X509.getExtKeyUsageString(this.hex) + "\n"; } else if (extName === "subjectKeyIdentifier") { s += " " + X509.getExtSubjectKeyIdentifier(this.hex) + "\n"; } else if (extName === "authorityKeyIdentifier") { var akid = X509.getExtAuthorityKeyIdentifier(this.hex); if (akid.kid !== undefined) s += " kid=" + akid.kid + "\n"; } else if (extName === "extKeyUsage") { var eku = X509.getExtExtKeyUsageName(this.hex); s += " " + eku.join(", ") + "\n"; } else if (extName === "subjectAltName") { var san = X509.getExtSubjectAltName(this.hex); s += " " + san.join(", ") + "\n"; } else if (extName === "cRLDistributionPoints") { var cdp = X509.getExtCRLDistributionPointsURI(this.hex); s += " " + cdp + "\n"; } else if (extName === "authorityInfoAccess") { var aia = X509.getExtAIAInfo(this.hex); if (aia.ocsp !== undefined) s += " ocsp: " + aia.ocsp.join(",") + "\n"; if (aia.caissuer !== undefined) s += " caissuer: " + aia.caissuer.join(",") + "\n"; } } s += "signature algorithm: " + X509.getSignatureAlgorithmName(this.hex) + "\n"; s += "signature: " + X509.getSignatureValueHex(this.hex).substr(0, 16) + "...\n"; return s; }; }; X509.pemToBase64 = function(sCertPEM) { var s = sCertPEM; s = s.replace("-----BEGIN CERTIFICATE-----", ""); s = s.replace("-----END CERTIFICATE-----", ""); s = s.replace(/[ \n]+/g, ""); return s; }; X509.pemToHex = function(sCertPEM) { var b64Cert = X509.pemToBase64(sCertPEM); var hCert = b64tohex(b64Cert); return hCert; }; X509.getSubjectPublicKeyPosFromCertHex = function(hCert) { var pInfo = X509.getSubjectPublicKeyInfoPosFromCertHex(hCert); if (pInfo == -1) return -1; var a = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, pInfo); if (a.length != 2) return -1; var pBitString = a[1]; if (hCert.substring(pBitString, pBitString + 2) != '03') return -1; var pBitStringV = ASN1HEX.getStartPosOfV_AtObj(hCert, pBitString); if (hCert.substring(pBitStringV, pBitStringV + 2) != '00') return -1; return pBitStringV + 2; }; X509.getSubjectPublicKeyInfoPosFromCertHex = function(hCert) { var pTbsCert = ASN1HEX.getStartPosOfV_AtObj(hCert, 0); var a = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, pTbsCert); if (a.length < 1) return -1; if (hCert.substring(a[0], a[0] + 10) == "a003020102") { if (a.length < 6) return -1; return a[6]; } else { if (a.length < 5) return -1; return a[5]; } }; X509.getPublicKeyHexArrayFromCertHex = function(hCert) { var p = X509.getSubjectPublicKeyPosFromCertHex(hCert); var a = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, p); if (a.length != 2) return []; var hN = ASN1HEX.getHexOfV_AtObj(hCert, a[0]); var hE = ASN1HEX.getHexOfV_AtObj(hCert, a[1]); if (hN != null && hE != null) { return [hN, hE]; } else { return []; } }; X509.getHexTbsCertificateFromCert = function(hCert) { var pTbsCert = ASN1HEX.getStartPosOfV_AtObj(hCert, 0); return pTbsCert; }; X509.getPublicKeyHexArrayFromCertPEM = function(sCertPEM) { var hCert = X509.pemToHex(sCertPEM); var a = X509.getPublicKeyHexArrayFromCertHex(hCert); return a; }; X509.hex2dn = function(hex, idx) { if (idx === undefined) idx = 0; if (hex.substr(idx, 2) !== "30") throw "malformed DN"; var a = new Array(); var aIdx = ASN1HEX.getPosArrayOfChildren_AtObj(hex, idx); for (var i = 0; i < aIdx.length; i++) { a.push(X509.hex2rdn(hex, aIdx[i])); } a = a.map(function(s) { return s.replace("/", "\\/"); }); return "/" + a.join("/"); }; X509.hex2rdn = function(hex, idx) { if (idx === undefined) idx = 0; if (hex.substr(idx, 2) !== "31") throw "malformed RDN"; var a = new Array(); var aIdx = ASN1HEX.getPosArrayOfChildren_AtObj(hex, idx); for (var i = 0; i < aIdx.length; i++) { a.push(X509.hex2attrTypeValue(hex, aIdx[i])); } a = a.map(function(s) { return s.replace("+", "\\+"); }); return a.join("+"); }; X509.hex2attrTypeValue = function(hex, idx) { if (idx === undefined) idx = 0; if (hex.substr(idx, 2) !== "30") throw "malformed attribute type and value"; var aIdx = ASN1HEX.getPosArrayOfChildren_AtObj(hex, idx); if (aIdx.length !== 2 || hex.substr(aIdx[0], 2) !== "06") "malformed attribute type and value"; var oidHex = ASN1HEX.getHexOfV_AtObj(hex, aIdx[0]); var oidInt = KJUR.asn1.ASN1Util.oidHexToInt(oidHex); var atype = KJUR.asn1.x509.OID.oid2atype(oidInt); var hV = ASN1HEX.getHexOfV_AtObj(hex, aIdx[1]); var rawV = hextorstr(hV); return atype + "=" + rawV; }; X509.getPublicKeyFromCertPEM = function(sCertPEM) { var info = X509.getPublicKeyInfoPropOfCertPEM(sCertPEM); if (info.algoid == "2a864886f70d010101") { var aRSA = KEYUTIL.parsePublicRawRSAKeyHex(info.keyhex); var key = new RSAKey(); key.setPublic(aRSA.n, aRSA.e); return key; } else if (info.algoid == "2a8648ce3d0201") { var curveName = KJUR.crypto.OID.oidhex2name[info.algparam]; var key = new KJUR.crypto.ECDSA({'curve': curveName, 'info': info.keyhex}); key.setPublicKeyHex(info.keyhex); return key; } else if (info.algoid == "2a8648ce380401") { var p = ASN1HEX.getVbyList(info.algparam, 0, [0], "02"); var q = ASN1HEX.getVbyList(info.algparam, 0, [1], "02"); var g = ASN1HEX.getVbyList(info.algparam, 0, [2], "02"); var y = ASN1HEX.getHexOfV_AtObj(info.keyhex, 0); y = y.substr(2); var key = new KJUR.crypto.DSA(); key.setPublic(new BigInteger(p, 16), new BigInteger(q, 16), new BigInteger(g, 16), new BigInteger(y, 16)); return key; } else { throw "unsupported key"; } }; X509.getPublicKeyInfoPropOfCertPEM = function(sCertPEM) { var result = {}; result.algparam = null; var hCert = X509.pemToHex(sCertPEM); var a1 = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, 0); if (a1.length != 3) throw "malformed X.509 certificate PEM (code:001)"; if (hCert.substr(a1[0], 2) != "30") throw "malformed X.509 certificate PEM (code:002)"; var a2 = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, a1[0]); var idx_spi = 6; if (hCert.substr(a2[0], 2) !== "a0") idx_spi = 5; if (a2.length < idx_spi + 1) throw "malformed X.509 certificate PEM (code:003)"; var a3 = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, a2[idx_spi]); if (a3.length != 2) throw "malformed X.509 certificate PEM (code:004)"; var a4 = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, a3[0]); if (a4.length != 2) throw "malformed X.509 certificate PEM (code:005)"; result.algoid = ASN1HEX.getHexOfV_AtObj(hCert, a4[0]); if (hCert.substr(a4[1], 2) == "06") { result.algparam = ASN1HEX.getHexOfV_AtObj(hCert, a4[1]); } else if (hCert.substr(a4[1], 2) == "30") { result.algparam = ASN1HEX.getHexOfTLV_AtObj(hCert, a4[1]); } if (hCert.substr(a3[1], 2) != "03") throw "malformed X.509 certificate PEM (code:006)"; var unusedBitAndKeyHex = ASN1HEX.getHexOfV_AtObj(hCert, a3[1]); result.keyhex = unusedBitAndKeyHex.substr(2); return result; }; X509.getPublicKeyInfoPosOfCertHEX = function(hCert) { var a1 = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, 0); if (a1.length != 3) throw "malformed X.509 certificate PEM (code:001)"; if (hCert.substr(a1[0], 2) != "30") throw "malformed X.509 certificate PEM (code:002)"; var a2 = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, a1[0]); if (a2.length < 7) throw "malformed X.509 certificate PEM (code:003)"; return a2[6]; }; X509.getV3ExtInfoListOfCertHex = function(hCert) { var a1 = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, 0); if (a1.length != 3) throw "malformed X.509 certificate PEM (code:001)"; if (hCert.substr(a1[0], 2) != "30") throw "malformed X.509 certificate PEM (code:002)"; var a2 = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, a1[0]); if (a2.length < 8) throw "malformed X.509 certificate PEM (code:003)"; if (hCert.substr(a2[7], 2) != "a3") throw "malformed X.509 certificate PEM (code:004)"; var a3 = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, a2[7]); if (a3.length != 1) throw "malformed X.509 certificate PEM (code:005)"; if (hCert.substr(a3[0], 2) != "30") throw "malformed X.509 certificate PEM (code:006)"; var a4 = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, a3[0]); var numExt = a4.length; var aInfo = new Array(numExt); for (var i = 0; i < numExt; i++) { aInfo[i] = X509.getV3ExtItemInfo_AtObj(hCert, a4[i]); } return aInfo; }; X509.getV3ExtItemInfo_AtObj = function(hCert, pos) { var info = {}; info.posTLV = pos; var a = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, pos); if (a.length != 2 && a.length != 3) throw "malformed X.509v3 Ext (code:001)"; if (hCert.substr(a[0], 2) != "06") throw "malformed X.509v3 Ext (code:002)"; var valueHex = ASN1HEX.getHexOfV_AtObj(hCert, a[0]); info.oid = ASN1HEX.hextooidstr(valueHex); info.critical = false; if (a.length == 3) info.critical = true; var posExtV = a[a.length - 1]; if (hCert.substr(posExtV, 2) != "04") throw "malformed X.509v3 Ext (code:003)"; info.posV = ASN1HEX.getStartPosOfV_AtObj(hCert, posExtV); return info; }; X509.getHexOfTLV_V3ExtValue = function(hCert, oidOrName) { var pos = X509.getPosOfTLV_V3ExtValue(hCert, oidOrName); if (pos == -1) return null; return ASN1HEX.getHexOfTLV_AtObj(hCert, pos); }; X509.getHexOfV_V3ExtValue = function(hCert, oidOrName) { var pos = X509.getPosOfTLV_V3ExtValue(hCert, oidOrName); if (pos == -1) return null; return ASN1HEX.getHexOfV_AtObj(hCert, pos); }; X509.getPosOfTLV_V3ExtValue = function(hCert, oidOrName) { var oid = oidOrName; if (! oidOrName.match(/^[0-9.]+$/)) oid = KJUR.asn1.x509.OID.name2oid(oidOrName); if (oid == '') return -1; var infoList = X509.getV3ExtInfoListOfCertHex(hCert); for (var i = 0; i < infoList.length; i++) { var info = infoList[i]; if (info.oid == oid) return info.posV; } return -1; }; X509.getExtBasicConstraints = function(hCert) { var hBC = X509.getHexOfV_V3ExtValue(hCert, "basicConstraints"); if (hBC === null) return null; if (hBC === '') return {}; if (hBC === '0101ff') return { "cA": true }; if (hBC.substr(0, 8) === '0101ff02') { var pathLexHex = ASN1HEX.getHexOfV_AtObj(hBC, 6); var pathLen = parseInt(pathLexHex, 16); return { "cA": true, "pathLen": pathLen }; } throw "unknown error"; }; X509.KEYUSAGE_NAME = [ "digitalSignature", "nonRepudiation", "keyEncipherment", "dataEncipherment", "keyAgreement", "keyCertSign", "cRLSign", "encipherOnly", "decipherOnly" ]; X509.getExtKeyUsageBin = function(hCert) { var hKeyUsage = X509.getHexOfV_V3ExtValue(hCert, "keyUsage"); if (hKeyUsage == '') return ''; if (hKeyUsage.length % 2 != 0 || hKeyUsage.length <= 2) throw "malformed key usage value"; var unusedBits = parseInt(hKeyUsage.substr(0, 2)); var bKeyUsage = parseInt(hKeyUsage.substr(2), 16).toString(2); return bKeyUsage.substr(0, bKeyUsage.length - unusedBits); }; X509.getExtKeyUsageString = function(hCert) { var bKeyUsage = X509.getExtKeyUsageBin(hCert); var a = new Array(); for (var i = 0; i < bKeyUsage.length; i++) { if (bKeyUsage.substr(i, 1) == "1") a.push(X509.KEYUSAGE_NAME[i]); } return a.join(","); }; X509.getExtSubjectKeyIdentifier = function(hCert) { var hSKID = X509.getHexOfV_V3ExtValue(hCert, "subjectKeyIdentifier"); return hSKID; }; X509.getExtAuthorityKeyIdentifier = function(hCert) { var result = {}; var hAKID = X509.getHexOfTLV_V3ExtValue(hCert, "authorityKeyIdentifier"); if (hAKID === null) return null; var a = ASN1HEX.getPosArrayOfChildren_AtObj(hAKID, 0); for (var i = 0; i < a.length; i++) { if (hAKID.substr(a[i], 2) === "80") result.kid = ASN1HEX.getHexOfV_AtObj(hAKID, a[i]); } return result; }; X509.getExtExtKeyUsageName = function(hCert) { var result = new Array(); var h = X509.getHexOfTLV_V3ExtValue(hCert, "extKeyUsage"); if (h === null) return null; var a = ASN1HEX.getPosArrayOfChildren_AtObj(h, 0); for (var i = 0; i < a.length; i++) { var hex = ASN1HEX.getHexOfV_AtObj(h, a[i]); var oid = KJUR.asn1.ASN1Util.oidHexToInt(hex); var name = KJUR.asn1.x509.OID.oid2name(oid); result.push(name); } return result; }; X509.getExtSubjectAltName = function(hCert) { var result = new Array(); var h = X509.getHexOfTLV_V3ExtValue(hCert, "subjectAltName"); var a = ASN1HEX.getPosArrayOfChildren_AtObj(h, 0); for (var i = 0; i < a.length; i++) { if (h.substr(a[i], 2) === "82") { var fqdn = hextoutf8(ASN1HEX.getHexOfV_AtObj(h, a[i])); result.push(fqdn); } } return result; }; X509.getExtCRLDistributionPointsURI = function(hCert) { var result = new Array(); var h = X509.getHexOfTLV_V3ExtValue(hCert, "cRLDistributionPoints"); var a = ASN1HEX.getPosArrayOfChildren_AtObj(h, 0); for (var i = 0; i < a.length; i++) { var hDP = ASN1HEX.getHexOfTLV_AtObj(h, a[i]); var a1 = ASN1HEX.getPosArrayOfChildren_AtObj(hDP, 0); for (var j = 0; j < a1.length; j++) { if (hDP.substr(a1[j], 2) === "a0") { var hDPN = ASN1HEX.getHexOfV_AtObj(hDP, a1[j]); if (hDPN.substr(0, 2) === "a0") { var hFullName = ASN1HEX.getHexOfV_AtObj(hDPN, 0); if (hFullName.substr(0, 2) === "86") { var hURI = ASN1HEX.getHexOfV_AtObj(hFullName, 0); var uri = hextoutf8(hURI); result.push(uri); } } } } } return result; }; X509.getExtAIAInfo = function(hCert) { var result = {}; result.ocsp = []; result.caissuer = []; var pos1 = X509.getPosOfTLV_V3ExtValue(hCert, "authorityInfoAccess"); if (pos1 == -1) return null; if (hCert.substr(pos1, 2) != "30") throw "malformed AIA Extn Value"; var posAccDescList = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, pos1); for (var i = 0; i < posAccDescList.length; i++) { var p = posAccDescList[i]; var posAccDescChild = ASN1HEX.getPosArrayOfChildren_AtObj(hCert, p); if (posAccDescChild.length != 2) throw "malformed AccessDescription of AIA Extn"; var pOID = posAccDescChild[0]; var pName = posAccDescChild[1]; if (ASN1HEX.getHexOfV_AtObj(hCert, pOID) == "2b06010505073001") { if (hCert.substr(pName, 2) == "86") { result.ocsp.push(hextoutf8(ASN1HEX.getHexOfV_AtObj(hCert, pName))); } } if (ASN1HEX.getHexOfV_AtObj(hCert, pOID) == "2b06010505073002") { if (hCert.substr(pName, 2) == "86") { result.caissuer.push(hextoutf8(ASN1HEX.getHexOfV_AtObj(hCert, pName))); } } } return result; }; X509.getSignatureAlgorithmName = function(hCert) { var sigAlgOidHex = ASN1HEX.getDecendantHexVByNthList(hCert, 0, [1, 0]); var sigAlgOidInt = KJUR.asn1.ASN1Util.oidHexToInt(sigAlgOidHex); var sigAlgName = KJUR.asn1.x509.OID.oid2name(sigAlgOidInt); return sigAlgName; }; X509.getSignatureValueHex = function(hCert) { var h = ASN1HEX.getDecendantHexVByNthList(hCert, 0, [2]); if (h.substr(0, 2) !== "00") throw "can't get signature value"; return h.substr(2); }; X509.getSerialNumberHex = function(hCert) { return ASN1HEX.getDecendantHexVByNthList(hCert, 0, [0, 1]); };
 /* crypto-1.1.min.js  */
-/*! crypto-1.1.5.js (c) 2013 Kenji Urushima | kjur.github.com/jsrsasign/license
+/*! crypto-1.1.11.js (c) 2013-2016 Kenji Urushima | kjur.github.com/jsrsasign/license
  */
-if(typeof KJUR=="undefined"||!KJUR){KJUR={}}if(typeof KJUR.crypto=="undefined"||!KJUR.crypto){KJUR.crypto={}}KJUR.crypto.Util=new function(){this.DIGESTINFOHEAD={sha1:"3021300906052b0e03021a05000414",sha224:"302d300d06096086480165030402040500041c",sha256:"3031300d060960864801650304020105000420",sha384:"3041300d060960864801650304020205000430",sha512:"3051300d060960864801650304020305000440",md2:"3020300c06082a864886f70d020205000410",md5:"3020300c06082a864886f70d020505000410",ripemd160:"3021300906052b2403020105000414",};this.DEFAULTPROVIDER={md5:"cryptojs",sha1:"cryptojs",sha224:"cryptojs",sha256:"cryptojs",sha384:"cryptojs",sha512:"cryptojs",ripemd160:"cryptojs",hmacmd5:"cryptojs",hmacsha1:"cryptojs",hmacsha224:"cryptojs",hmacsha256:"cryptojs",hmacsha384:"cryptojs",hmacsha512:"cryptojs",hmacripemd160:"cryptojs",MD5withRSA:"cryptojs/jsrsa",SHA1withRSA:"cryptojs/jsrsa",SHA224withRSA:"cryptojs/jsrsa",SHA256withRSA:"cryptojs/jsrsa",SHA384withRSA:"cryptojs/jsrsa",SHA512withRSA:"cryptojs/jsrsa",RIPEMD160withRSA:"cryptojs/jsrsa",MD5withECDSA:"cryptojs/jsrsa",SHA1withECDSA:"cryptojs/jsrsa",SHA224withECDSA:"cryptojs/jsrsa",SHA256withECDSA:"cryptojs/jsrsa",SHA384withECDSA:"cryptojs/jsrsa",SHA512withECDSA:"cryptojs/jsrsa",RIPEMD160withECDSA:"cryptojs/jsrsa",SHA1withDSA:"cryptojs/jsrsa",SHA224withDSA:"cryptojs/jsrsa",SHA256withDSA:"cryptojs/jsrsa",MD5withRSAandMGF1:"cryptojs/jsrsa",SHA1withRSAandMGF1:"cryptojs/jsrsa",SHA224withRSAandMGF1:"cryptojs/jsrsa",SHA256withRSAandMGF1:"cryptojs/jsrsa",SHA384withRSAandMGF1:"cryptojs/jsrsa",SHA512withRSAandMGF1:"cryptojs/jsrsa",RIPEMD160withRSAandMGF1:"cryptojs/jsrsa",};this.CRYPTOJSMESSAGEDIGESTNAME={md5:"CryptoJS.algo.MD5",sha1:"CryptoJS.algo.SHA1",sha224:"CryptoJS.algo.SHA224",sha256:"CryptoJS.algo.SHA256",sha384:"CryptoJS.algo.SHA384",sha512:"CryptoJS.algo.SHA512",ripemd160:"CryptoJS.algo.RIPEMD160"};this.getDigestInfoHex=function(a,b){if(typeof this.DIGESTINFOHEAD[b]=="undefined"){throw"alg not supported in Util.DIGESTINFOHEAD: "+b}return this.DIGESTINFOHEAD[b]+a};this.getPaddedDigestInfoHex=function(h,a,j){var c=this.getDigestInfoHex(h,a);var d=j/4;if(c.length+22>d){throw"key is too short for SigAlg: keylen="+j+","+a}var b="0001";var k="00"+c;var g="";var l=d-b.length-k.length;for(var f=0;f<l;f+=2){g+="ff"}var e=b+g+k;return e};this.hashString=function(a,c){var b=new KJUR.crypto.MessageDigest({alg:c});return b.digestString(a)};this.hashHex=function(b,c){var a=new KJUR.crypto.MessageDigest({alg:c});return a.digestHex(b)};this.sha1=function(a){var b=new KJUR.crypto.MessageDigest({alg:"sha1",prov:"cryptojs"});return b.digestString(a)};this.sha256=function(a){var b=new KJUR.crypto.MessageDigest({alg:"sha256",prov:"cryptojs"});return b.digestString(a)};this.sha256Hex=function(a){var b=new KJUR.crypto.MessageDigest({alg:"sha256",prov:"cryptojs"});return b.digestHex(a)};this.sha512=function(a){var b=new KJUR.crypto.MessageDigest({alg:"sha512",prov:"cryptojs"});return b.digestString(a)};this.sha512Hex=function(a){var b=new KJUR.crypto.MessageDigest({alg:"sha512",prov:"cryptojs"});return b.digestHex(a)};this.md5=function(a){var b=new KJUR.crypto.MessageDigest({alg:"md5",prov:"cryptojs"});return b.digestString(a)};this.ripemd160=function(a){var b=new KJUR.crypto.MessageDigest({alg:"ripemd160",prov:"cryptojs"});return b.digestString(a)};this.getCryptoJSMDByName=function(a){}};KJUR.crypto.MessageDigest=function(params){var md=null;var algName=null;var provName=null;this.setAlgAndProvider=function(alg,prov){if(alg!=null&&prov===undefined){prov=KJUR.crypto.Util.DEFAULTPROVIDER[alg]}if(":md5:sha1:sha224:sha256:sha384:sha512:ripemd160:".indexOf(alg)!=-1&&prov=="cryptojs"){try{this.md=eval(KJUR.crypto.Util.CRYPTOJSMESSAGEDIGESTNAME[alg]).create()}catch(ex){throw"setAlgAndProvider hash alg set fail alg="+alg+"/"+ex}this.updateString=function(str){this.md.update(str)};this.updateHex=function(hex){var wHex=CryptoJS.enc.Hex.parse(hex);this.md.update(wHex)};this.digest=function(){var hash=this.md.finalize();return hash.toString(CryptoJS.enc.Hex)};this.digestString=function(str){this.updateString(str);return this.digest()};this.digestHex=function(hex){this.updateHex(hex);return this.digest()}}if(":sha256:".indexOf(alg)!=-1&&prov=="sjcl"){try{this.md=new sjcl.hash.sha256()}catch(ex){throw"setAlgAndProvider hash alg set fail alg="+alg+"/"+ex}this.updateString=function(str){this.md.update(str)};this.updateHex=function(hex){var baHex=sjcl.codec.hex.toBits(hex);this.md.update(baHex)};this.digest=function(){var hash=this.md.finalize();return sjcl.codec.hex.fromBits(hash)};this.digestString=function(str){this.updateString(str);return this.digest()};this.digestHex=function(hex){this.updateHex(hex);return this.digest()}}};this.updateString=function(str){throw"updateString(str) not supported for this alg/prov: "+this.algName+"/"+this.provName};this.updateHex=function(hex){throw"updateHex(hex) not supported for this alg/prov: "+this.algName+"/"+this.provName};this.digest=function(){throw"digest() not supported for this alg/prov: "+this.algName+"/"+this.provName};this.digestString=function(str){throw"digestString(str) not supported for this alg/prov: "+this.algName+"/"+this.provName};this.digestHex=function(hex){throw"digestHex(hex) not supported for this alg/prov: "+this.algName+"/"+this.provName};if(params!==undefined){if(params.alg!==undefined){this.algName=params.alg;if(params.prov===undefined){this.provName=KJUR.crypto.Util.DEFAULTPROVIDER[this.algName]}this.setAlgAndProvider(this.algName,this.provName)}}};KJUR.crypto.Mac=function(params){var mac=null;var pass=null;var algName=null;var provName=null;var algProv=null;this.setAlgAndProvider=function(alg,prov){if(alg==null){alg="hmacsha1"}alg=alg.toLowerCase();if(alg.substr(0,4)!="hmac"){throw"setAlgAndProvider unsupported HMAC alg: "+alg}if(prov===undefined){prov=KJUR.crypto.Util.DEFAULTPROVIDER[alg]}this.algProv=alg+"/"+prov;var hashAlg=alg.substr(4);if(":md5:sha1:sha224:sha256:sha384:sha512:ripemd160:".indexOf(hashAlg)!=-1&&prov=="cryptojs"){try{var mdObj=eval(KJUR.crypto.Util.CRYPTOJSMESSAGEDIGESTNAME[hashAlg]);this.mac=CryptoJS.algo.HMAC.create(mdObj,this.pass)}catch(ex){throw"setAlgAndProvider hash alg set fail hashAlg="+hashAlg+"/"+ex}this.updateString=function(str){this.mac.update(str)};this.updateHex=function(hex){var wHex=CryptoJS.enc.Hex.parse(hex);this.mac.update(wHex)};this.doFinal=function(){var hash=this.mac.finalize();return hash.toString(CryptoJS.enc.Hex)};this.doFinalString=function(str){this.updateString(str);return this.doFinal()};this.doFinalHex=function(hex){this.updateHex(hex);return this.doFinal()}}};this.updateString=function(str){throw"updateString(str) not supported for this alg/prov: "+this.algProv};this.updateHex=function(hex){throw"updateHex(hex) not supported for this alg/prov: "+this.algProv};this.doFinal=function(){throw"digest() not supported for this alg/prov: "+this.algProv};this.doFinalString=function(str){throw"digestString(str) not supported for this alg/prov: "+this.algProv};this.doFinalHex=function(hex){throw"digestHex(hex) not supported for this alg/prov: "+this.algProv};if(params!==undefined){if(params.pass!==undefined){this.pass=params.pass}if(params.alg!==undefined){this.algName=params.alg;if(params.prov===undefined){this.provName=KJUR.crypto.Util.DEFAULTPROVIDER[this.algName]}this.setAlgAndProvider(this.algName,this.provName)}}};KJUR.crypto.Signature=function(o){var q=null;var n=null;var r=null;var c=null;var l=null;var d=null;var k=null;var h=null;var p=null;var e=null;var b=-1;var g=null;var j=null;var a=null;var i=null;var f=null;this._setAlgNames=function(){if(this.algName.match(/^(.+)with(.+)$/)){this.mdAlgName=RegExp.$1.toLowerCase();this.pubkeyAlgName=RegExp.$2.toLowerCase()}};this._zeroPaddingOfSignature=function(x,w){var v="";var t=w/4-x.length;for(var u=0;u<t;u++){v=v+"0"}return v+x};this.setAlgAndProvider=function(u,t){this._setAlgNames();if(t!="cryptojs/jsrsa"){throw"provider not supported: "+t}if(":md5:sha1:sha224:sha256:sha384:sha512:ripemd160:".indexOf(this.mdAlgName)!=-1){try{this.md=new KJUR.crypto.MessageDigest({alg:this.mdAlgName})}catch(s){throw"setAlgAndProvider hash alg set fail alg="+this.mdAlgName+"/"+s}this.init=function(w,x){var y=null;try{if(x===undefined){y=KEYUTIL.getKey(w)}else{y=KEYUTIL.getKey(w,x)}}catch(v){throw"init failed:"+v}if(y.isPrivate===true){this.prvKey=y;this.state="SIGN"}else{if(y.isPublic===true){this.pubKey=y;this.state="VERIFY"}else{throw"init failed.:"+y}}};this.initSign=function(v){if(typeof v.ecprvhex=="string"&&typeof v.eccurvename=="string"){this.ecprvhex=v.ecprvhex;this.eccurvename=v.eccurvename}else{this.prvKey=v}this.state="SIGN"};this.initVerifyByPublicKey=function(v){if(typeof v.ecpubhex=="string"&&typeof v.eccurvename=="string"){this.ecpubhex=v.ecpubhex;this.eccurvename=v.eccurvename}else{if(v instanceof KJUR.crypto.ECDSA){this.pubKey=v}else{if(v instanceof RSAKey){this.pubKey=v}}}this.state="VERIFY"};this.initVerifyByCertificatePEM=function(v){var w=new X509();w.readCertPEM(v);this.pubKey=w.subjectPublicKeyRSA;this.state="VERIFY"};this.updateString=function(v){this.md.updateString(v)};this.updateHex=function(v){this.md.updateHex(v)};this.sign=function(){this.sHashHex=this.md.digest();if(typeof this.ecprvhex!="undefined"&&typeof this.eccurvename!="undefined"){var v=new KJUR.crypto.ECDSA({curve:this.eccurvename});this.hSign=v.signHex(this.sHashHex,this.ecprvhex)}else{if(this.pubkeyAlgName=="rsaandmgf1"){this.hSign=this.prvKey.signWithMessageHashPSS(this.sHashHex,this.mdAlgName,this.pssSaltLen)}else{if(this.pubkeyAlgName=="rsa"){this.hSign=this.prvKey.signWithMessageHash(this.sHashHex,this.mdAlgName)}else{if(this.prvKey instanceof KJUR.crypto.ECDSA){this.hSign=this.prvKey.signWithMessageHash(this.sHashHex)}else{if(this.prvKey instanceof KJUR.crypto.DSA){this.hSign=this.prvKey.signWithMessageHash(this.sHashHex)}else{throw"Signature: unsupported public key alg: "+this.pubkeyAlgName}}}}}return this.hSign};this.signString=function(v){this.updateString(v);this.sign()};this.signHex=function(v){this.updateHex(v);this.sign()};this.verify=function(v){this.sHashHex=this.md.digest();if(typeof this.ecpubhex!="undefined"&&typeof this.eccurvename!="undefined"){var w=new KJUR.crypto.ECDSA({curve:this.eccurvename});return w.verifyHex(this.sHashHex,v,this.ecpubhex)}else{if(this.pubkeyAlgName=="rsaandmgf1"){return this.pubKey.verifyWithMessageHashPSS(this.sHashHex,v,this.mdAlgName,this.pssSaltLen)}else{if(this.pubkeyAlgName=="rsa"){return this.pubKey.verifyWithMessageHash(this.sHashHex,v)}else{if(this.pubKey instanceof KJUR.crypto.ECDSA){return this.pubKey.verifyWithMessageHash(this.sHashHex,v)}else{if(this.pubKey instanceof KJUR.crypto.DSA){return this.pubKey.verifyWithMessageHash(this.sHashHex,v)}else{throw"Signature: unsupported public key alg: "+this.pubkeyAlgName}}}}}}}};this.init=function(s,t){throw"init(key, pass) not supported for this alg:prov="+this.algProvName};this.initVerifyByPublicKey=function(s){throw"initVerifyByPublicKey(rsaPubKeyy) not supported for this alg:prov="+this.algProvName};this.initVerifyByCertificatePEM=function(s){throw"initVerifyByCertificatePEM(certPEM) not supported for this alg:prov="+this.algProvName};this.initSign=function(s){throw"initSign(prvKey) not supported for this alg:prov="+this.algProvName};this.updateString=function(s){throw"updateString(str) not supported for this alg:prov="+this.algProvName};this.updateHex=function(s){throw"updateHex(hex) not supported for this alg:prov="+this.algProvName};this.sign=function(){throw"sign() not supported for this alg:prov="+this.algProvName};this.signString=function(s){throw"digestString(str) not supported for this alg:prov="+this.algProvName};this.signHex=function(s){throw"digestHex(hex) not supported for this alg:prov="+this.algProvName};this.verify=function(s){throw"verify(hSigVal) not supported for this alg:prov="+this.algProvName};this.initParams=o;if(o!==undefined){if(o.alg!==undefined){this.algName=o.alg;if(o.prov===undefined){this.provName=KJUR.crypto.Util.DEFAULTPROVIDER[this.algName]}else{this.provName=o.prov}this.algProvName=this.algName+":"+this.provName;this.setAlgAndProvider(this.algName,this.provName);this._setAlgNames()}if(o.psssaltlen!==undefined){this.pssSaltLen=o.psssaltlen}if(o.prvkeypem!==undefined){if(o.prvkeypas!==undefined){throw"both prvkeypem and prvkeypas parameters not supported"}else{try{var q=new RSAKey();q.readPrivateKeyFromPEMString(o.prvkeypem);this.initSign(q)}catch(m){throw"fatal error to load pem private key: "+m}}}}};KJUR.crypto.OID=new function(){this.oidhex2name={"2a864886f70d010101":"rsaEncryption","2a8648ce3d0201":"ecPublicKey","2a8648ce380401":"dsa","2a8648ce3d030107":"secp256r1","2b8104001f":"secp192k1","2b81040021":"secp224r1","2b8104000a":"secp256k1","2b81040023":"secp521r1","2b81040022":"secp384r1","2a8648ce380403":"SHA1withDSA","608648016503040301":"SHA224withDSA","608648016503040302":"SHA256withDSA",}};
+"undefined"!=typeof KJUR&&KJUR||(KJUR={}),"undefined"!=typeof KJUR.crypto&&KJUR.crypto||(KJUR.crypto={}),KJUR.crypto.Util=new function(){this.DIGESTINFOHEAD={sha1:"3021300906052b0e03021a05000414",sha224:"302d300d06096086480165030402040500041c",sha256:"3031300d060960864801650304020105000420",sha384:"3041300d060960864801650304020205000430",sha512:"3051300d060960864801650304020305000440",md2:"3020300c06082a864886f70d020205000410",md5:"3020300c06082a864886f70d020505000410",ripemd160:"3021300906052b2403020105000414"},this.DEFAULTPROVIDER={md5:"cryptojs",sha1:"cryptojs",sha224:"cryptojs",sha256:"cryptojs",sha384:"cryptojs",sha512:"cryptojs",ripemd160:"cryptojs",hmacmd5:"cryptojs",hmacsha1:"cryptojs",hmacsha224:"cryptojs",hmacsha256:"cryptojs",hmacsha384:"cryptojs",hmacsha512:"cryptojs",hmacripemd160:"cryptojs",MD5withRSA:"cryptojs/jsrsa",SHA1withRSA:"cryptojs/jsrsa",SHA224withRSA:"cryptojs/jsrsa",SHA256withRSA:"cryptojs/jsrsa",SHA384withRSA:"cryptojs/jsrsa",SHA512withRSA:"cryptojs/jsrsa",RIPEMD160withRSA:"cryptojs/jsrsa",MD5withECDSA:"cryptojs/jsrsa",SHA1withECDSA:"cryptojs/jsrsa",SHA224withECDSA:"cryptojs/jsrsa",SHA256withECDSA:"cryptojs/jsrsa",SHA384withECDSA:"cryptojs/jsrsa",SHA512withECDSA:"cryptojs/jsrsa",RIPEMD160withECDSA:"cryptojs/jsrsa",SHA1withDSA:"cryptojs/jsrsa",SHA224withDSA:"cryptojs/jsrsa",SHA256withDSA:"cryptojs/jsrsa",MD5withRSAandMGF1:"cryptojs/jsrsa",SHA1withRSAandMGF1:"cryptojs/jsrsa",SHA224withRSAandMGF1:"cryptojs/jsrsa",SHA256withRSAandMGF1:"cryptojs/jsrsa",SHA384withRSAandMGF1:"cryptojs/jsrsa",SHA512withRSAandMGF1:"cryptojs/jsrsa",RIPEMD160withRSAandMGF1:"cryptojs/jsrsa"},this.CRYPTOJSMESSAGEDIGESTNAME={md5:CryptoJS.algo.MD5,sha1:CryptoJS.algo.SHA1,sha224:CryptoJS.algo.SHA224,sha256:CryptoJS.algo.SHA256,sha384:CryptoJS.algo.SHA384,sha512:CryptoJS.algo.SHA512,ripemd160:CryptoJS.algo.RIPEMD160},this.getDigestInfoHex=function(a,b){if("undefined"==typeof this.DIGESTINFOHEAD[b])throw"alg not supported in Util.DIGESTINFOHEAD: "+b;return this.DIGESTINFOHEAD[b]+a},this.getPaddedDigestInfoHex=function(a,b,c){var d=this.getDigestInfoHex(a,b),e=c/4;if(d.length+22>e)throw"key is too short for SigAlg: keylen="+c+","+b;for(var f="0001",g="00"+d,h="",i=e-f.length-g.length,j=0;j<i;j+=2)h+="ff";var k=f+h+g;return k},this.hashString=function(a,b){var c=new KJUR.crypto.MessageDigest({alg:b});return c.digestString(a)},this.hashHex=function(a,b){var c=new KJUR.crypto.MessageDigest({alg:b});return c.digestHex(a)},this.sha1=function(a){var b=new KJUR.crypto.MessageDigest({alg:"sha1",prov:"cryptojs"});return b.digestString(a)},this.sha256=function(a){var b=new KJUR.crypto.MessageDigest({alg:"sha256",prov:"cryptojs"});return b.digestString(a)},this.sha256Hex=function(a){var b=new KJUR.crypto.MessageDigest({alg:"sha256",prov:"cryptojs"});return b.digestHex(a)},this.sha512=function(a){var b=new KJUR.crypto.MessageDigest({alg:"sha512",prov:"cryptojs"});return b.digestString(a)},this.sha512Hex=function(a){var b=new KJUR.crypto.MessageDigest({alg:"sha512",prov:"cryptojs"});return b.digestHex(a)}},KJUR.crypto.Util.md5=function(a){var b=new KJUR.crypto.MessageDigest({alg:"md5",prov:"cryptojs"});return b.digestString(a)},KJUR.crypto.Util.ripemd160=function(a){var b=new KJUR.crypto.MessageDigest({alg:"ripemd160",prov:"cryptojs"});return b.digestString(a)},KJUR.crypto.Util.SECURERANDOMGEN=new SecureRandom,KJUR.crypto.Util.getRandomHexOfNbytes=function(a){var b=new Array(a);return KJUR.crypto.Util.SECURERANDOMGEN.nextBytes(b),BAtohex(b)},KJUR.crypto.Util.getRandomBigIntegerOfNbytes=function(a){return new BigInteger(KJUR.crypto.Util.getRandomHexOfNbytes(a),16)},KJUR.crypto.Util.getRandomHexOfNbits=function(a){var b=a%8,c=(a-b)/8,d=new Array(c+1);return KJUR.crypto.Util.SECURERANDOMGEN.nextBytes(d),d[0]=(255<<b&255^255)&d[0],BAtohex(d)},KJUR.crypto.Util.getRandomBigIntegerOfNbits=function(a){return new BigInteger(KJUR.crypto.Util.getRandomHexOfNbits(a),16)},KJUR.crypto.Util.getRandomBigIntegerZeroToMax=function(a){for(var b=a.bitLength();;){var c=KJUR.crypto.Util.getRandomBigIntegerOfNbits(b);if(a.compareTo(c)!=-1)return c}},KJUR.crypto.Util.getRandomBigIntegerMinToMax=function(a,b){var c=a.compareTo(b);if(1==c)throw"biMin is greater than biMax";if(0==c)return a;var d=b.subtract(a),e=KJUR.crypto.Util.getRandomBigIntegerZeroToMax(d);return e.add(a)},KJUR.crypto.MessageDigest=function(a){this.setAlgAndProvider=function(a,b){if(a=KJUR.crypto.MessageDigest.getCanonicalAlgName(a),null!==a&&void 0===b&&(b=KJUR.crypto.Util.DEFAULTPROVIDER[a]),":md5:sha1:sha224:sha256:sha384:sha512:ripemd160:".indexOf(a)!=-1&&"cryptojs"==b){try{this.md=KJUR.crypto.Util.CRYPTOJSMESSAGEDIGESTNAME[a].create()}catch(b){throw"setAlgAndProvider hash alg set fail alg="+a+"/"+b}this.updateString=function(a){this.md.update(a)},this.updateHex=function(a){var b=CryptoJS.enc.Hex.parse(a);this.md.update(b)},this.digest=function(){var a=this.md.finalize();return a.toString(CryptoJS.enc.Hex)},this.digestString=function(a){return this.updateString(a),this.digest()},this.digestHex=function(a){return this.updateHex(a),this.digest()}}if(":sha256:".indexOf(a)!=-1&&"sjcl"==b){try{this.md=new sjcl.hash.sha256}catch(b){throw"setAlgAndProvider hash alg set fail alg="+a+"/"+b}this.updateString=function(a){this.md.update(a)},this.updateHex=function(a){var b=sjcl.codec.hex.toBits(a);this.md.update(b)},this.digest=function(){var a=this.md.finalize();return sjcl.codec.hex.fromBits(a)},this.digestString=function(a){return this.updateString(a),this.digest()},this.digestHex=function(a){return this.updateHex(a),this.digest()}}},this.updateString=function(a){throw"updateString(str) not supported for this alg/prov: "+this.algName+"/"+this.provName},this.updateHex=function(a){throw"updateHex(hex) not supported for this alg/prov: "+this.algName+"/"+this.provName},this.digest=function(){throw"digest() not supported for this alg/prov: "+this.algName+"/"+this.provName},this.digestString=function(a){throw"digestString(str) not supported for this alg/prov: "+this.algName+"/"+this.provName},this.digestHex=function(a){throw"digestHex(hex) not supported for this alg/prov: "+this.algName+"/"+this.provName},void 0!==a&&void 0!==a.alg&&(this.algName=a.alg,void 0===a.prov&&(this.provName=KJUR.crypto.Util.DEFAULTPROVIDER[this.algName]),this.setAlgAndProvider(this.algName,this.provName))},KJUR.crypto.MessageDigest.getCanonicalAlgName=function(a){return"string"==typeof a&&(a=a.toLowerCase(),a=a.replace(/-/,"")),a},KJUR.crypto.MessageDigest.getHashLength=function(a){var b=KJUR.crypto.MessageDigest,c=b.getCanonicalAlgName(a);if(void 0===b.HASHLENGTH[c])throw"not supported algorithm: "+a;return b.HASHLENGTH[c]},KJUR.crypto.MessageDigest.HASHLENGTH={md5:16,sha1:20,sha224:28,sha256:32,sha384:48,sha512:64,ripemd160:20},KJUR.crypto.Mac=function(a){this.setAlgAndProvider=function(a,b){if(a=a.toLowerCase(),null==a&&(a="hmacsha1"),a=a.toLowerCase(),"hmac"!=a.substr(0,4))throw"setAlgAndProvider unsupported HMAC alg: "+a;void 0===b&&(b=KJUR.crypto.Util.DEFAULTPROVIDER[a]),this.algProv=a+"/"+b;var c=a.substr(4);if(":md5:sha1:sha224:sha256:sha384:sha512:ripemd160:".indexOf(c)!=-1&&"cryptojs"==b){try{var d=KJUR.crypto.Util.CRYPTOJSMESSAGEDIGESTNAME[c];this.mac=CryptoJS.algo.HMAC.create(d,this.pass)}catch(a){throw"setAlgAndProvider hash alg set fail hashAlg="+c+"/"+a}this.updateString=function(a){this.mac.update(a)},this.updateHex=function(a){var b=CryptoJS.enc.Hex.parse(a);this.mac.update(b)},this.doFinal=function(){var a=this.mac.finalize();return a.toString(CryptoJS.enc.Hex)},this.doFinalString=function(a){return this.updateString(a),this.doFinal()},this.doFinalHex=function(a){return this.updateHex(a),this.doFinal()}}},this.updateString=function(a){throw"updateString(str) not supported for this alg/prov: "+this.algProv},this.updateHex=function(a){throw"updateHex(hex) not supported for this alg/prov: "+this.algProv},this.doFinal=function(){throw"digest() not supported for this alg/prov: "+this.algProv},this.doFinalString=function(a){throw"digestString(str) not supported for this alg/prov: "+this.algProv},this.doFinalHex=function(a){throw"digestHex(hex) not supported for this alg/prov: "+this.algProv},this.setPassword=function(a){if("string"==typeof a){var b=a;return a.length%2!=1&&a.match(/^[0-9A-Fa-f]+$/)||(b=rstrtohex(a)),void(this.pass=CryptoJS.enc.Hex.parse(b))}if("object"!=typeof a)throw"KJUR.crypto.Mac unsupported password type: "+a;var b=null;if(void 0!==a.hex){if(a.hex.length%2!=0||!a.hex.match(/^[0-9A-Fa-f]+$/))throw"Mac: wrong hex password: "+a.hex;b=a.hex}if(void 0!==a.utf8&&(b=utf8tohex(a.utf8)),void 0!==a.rstr&&(b=rstrtohex(a.rstr)),void 0!==a.b64&&(b=b64tohex(a.b64)),void 0!==a.b64u&&(b=b64utohex(a.b64u)),null==b)throw"KJUR.crypto.Mac unsupported password type: "+a;this.pass=CryptoJS.enc.Hex.parse(b)},void 0!==a&&(void 0!==a.pass&&this.setPassword(a.pass),void 0!==a.alg&&(this.algName=a.alg,void 0===a.prov&&(this.provName=KJUR.crypto.Util.DEFAULTPROVIDER[this.algName]),this.setAlgAndProvider(this.algName,this.provName)))},KJUR.crypto.Signature=function(a){var b=null;if(this._setAlgNames=function(){var a=this.algName.match(/^(.+)with(.+)$/);a&&(this.mdAlgName=a[1].toLowerCase(),this.pubkeyAlgName=a[2].toLowerCase())},this._zeroPaddingOfSignature=function(a,b){for(var c="",d=b/4-a.length,e=0;e<d;e++)c+="0";return c+a},this.setAlgAndProvider=function(a,b){if(this._setAlgNames(),"cryptojs/jsrsa"!=b)throw"provider not supported: "+b;if(":md5:sha1:sha224:sha256:sha384:sha512:ripemd160:".indexOf(this.mdAlgName)!=-1){try{this.md=new KJUR.crypto.MessageDigest({alg:this.mdAlgName})}catch(a){throw"setAlgAndProvider hash alg set fail alg="+this.mdAlgName+"/"+a}this.init=function(a,b){var c=null;try{c=void 0===b?KEYUTIL.getKey(a):KEYUTIL.getKey(a,b)}catch(a){throw"init failed:"+a}if(c.isPrivate===!0)this.prvKey=c,this.state="SIGN";else{if(c.isPublic!==!0)throw"init failed.:"+c;this.pubKey=c,this.state="VERIFY"}},this.initSign=function(a){"string"==typeof a.ecprvhex&&"string"==typeof a.eccurvename?(this.ecprvhex=a.ecprvhex,this.eccurvename=a.eccurvename):this.prvKey=a,this.state="SIGN"},this.initVerifyByPublicKey=function(a){"string"==typeof a.ecpubhex&&"string"==typeof a.eccurvename?(this.ecpubhex=a.ecpubhex,this.eccurvename=a.eccurvename):a instanceof KJUR.crypto.ECDSA?this.pubKey=a:a instanceof RSAKey&&(this.pubKey=a),this.state="VERIFY"},this.initVerifyByCertificatePEM=function(a){var b=new X509;b.readCertPEM(a),this.pubKey=b.subjectPublicKeyRSA,this.state="VERIFY"},this.updateString=function(a){this.md.updateString(a)},this.updateHex=function(a){this.md.updateHex(a)},this.sign=function(){if(this.sHashHex=this.md.digest(),"undefined"!=typeof this.ecprvhex&&"undefined"!=typeof this.eccurvename){var a=new KJUR.crypto.ECDSA({curve:this.eccurvename});this.hSign=a.signHex(this.sHashHex,this.ecprvhex)}else if(this.prvKey instanceof RSAKey&&"rsaandmgf1"==this.pubkeyAlgName)this.hSign=this.prvKey.signWithMessageHashPSS(this.sHashHex,this.mdAlgName,this.pssSaltLen);else if(this.prvKey instanceof RSAKey&&"rsa"==this.pubkeyAlgName)this.hSign=this.prvKey.signWithMessageHash(this.sHashHex,this.mdAlgName);else if(this.prvKey instanceof KJUR.crypto.ECDSA)this.hSign=this.prvKey.signWithMessageHash(this.sHashHex);else{if(!(this.prvKey instanceof KJUR.crypto.DSA))throw"Signature: unsupported public key alg: "+this.pubkeyAlgName;this.hSign=this.prvKey.signWithMessageHash(this.sHashHex)}return this.hSign},this.signString=function(a){return this.updateString(a),this.sign()},this.signHex=function(a){return this.updateHex(a),this.sign()},this.verify=function(a){if(this.sHashHex=this.md.digest(),"undefined"!=typeof this.ecpubhex&&"undefined"!=typeof this.eccurvename){var b=new KJUR.crypto.ECDSA({curve:this.eccurvename});return b.verifyHex(this.sHashHex,a,this.ecpubhex)}if(this.pubKey instanceof RSAKey&&"rsaandmgf1"==this.pubkeyAlgName)return this.pubKey.verifyWithMessageHashPSS(this.sHashHex,a,this.mdAlgName,this.pssSaltLen);if(this.pubKey instanceof RSAKey&&"rsa"==this.pubkeyAlgName)return this.pubKey.verifyWithMessageHash(this.sHashHex,a);if(this.pubKey instanceof KJUR.crypto.ECDSA)return this.pubKey.verifyWithMessageHash(this.sHashHex,a);if(this.pubKey instanceof KJUR.crypto.DSA)return this.pubKey.verifyWithMessageHash(this.sHashHex,a);throw"Signature: unsupported public key alg: "+this.pubkeyAlgName}}},this.init=function(a,b){throw"init(key, pass) not supported for this alg:prov="+this.algProvName},this.initVerifyByPublicKey=function(a){throw"initVerifyByPublicKey(rsaPubKeyy) not supported for this alg:prov="+this.algProvName},this.initVerifyByCertificatePEM=function(a){throw"initVerifyByCertificatePEM(certPEM) not supported for this alg:prov="+this.algProvName},this.initSign=function(a){throw"initSign(prvKey) not supported for this alg:prov="+this.algProvName},this.updateString=function(a){throw"updateString(str) not supported for this alg:prov="+this.algProvName},this.updateHex=function(a){throw"updateHex(hex) not supported for this alg:prov="+this.algProvName},this.sign=function(){throw"sign() not supported for this alg:prov="+this.algProvName},this.signString=function(a){throw"digestString(str) not supported for this alg:prov="+this.algProvName},this.signHex=function(a){throw"digestHex(hex) not supported for this alg:prov="+this.algProvName},this.verify=function(a){throw"verify(hSigVal) not supported for this alg:prov="+this.algProvName},this.initParams=a,void 0!==a&&(void 0!==a.alg&&(this.algName=a.alg,void 0===a.prov?this.provName=KJUR.crypto.Util.DEFAULTPROVIDER[this.algName]:this.provName=a.prov,this.algProvName=this.algName+":"+this.provName,this.setAlgAndProvider(this.algName,this.provName),this._setAlgNames()),void 0!==a.psssaltlen&&(this.pssSaltLen=a.psssaltlen),void 0!==a.prvkeypem)){if(void 0!==a.prvkeypas)throw"both prvkeypem and prvkeypas parameters not supported";try{var b=new RSAKey;b.readPrivateKeyFromPEMString(a.prvkeypem),this.initSign(b)}catch(a){throw"fatal error to load pem private key: "+a}}},KJUR.crypto.Cipher=function(a){},KJUR.crypto.Cipher.encrypt=function(a,b,c){if(b instanceof RSAKey&&b.isPublic){var d=KJUR.crypto.Cipher.getAlgByKeyAndName(b,c);if("RSA"===d)return b.encrypt(a);if("RSAOAEP"===d)return b.encryptOAEP(a,"sha1");var e=d.match(/^RSAOAEP(\d+)$/);if(null!==e)return b.encryptOAEP(a,"sha"+e[1]);throw"Cipher.encrypt: unsupported algorithm for RSAKey: "+c}throw"Cipher.encrypt: unsupported key or algorithm"},KJUR.crypto.Cipher.decrypt=function(a,b,c){if(b instanceof RSAKey&&b.isPrivate){var d=KJUR.crypto.Cipher.getAlgByKeyAndName(b,c);if("RSA"===d)return b.decrypt(a);if("RSAOAEP"===d)return b.decryptOAEP(a,"sha1");var e=d.match(/^RSAOAEP(\d+)$/);if(null!==e)return b.decryptOAEP(a,"sha"+e[1]);throw"Cipher.decrypt: unsupported algorithm for RSAKey: "+c}throw"Cipher.decrypt: unsupported key or algorithm"},KJUR.crypto.Cipher.getAlgByKeyAndName=function(a,b){if(a instanceof RSAKey){if(":RSA:RSAOAEP:RSAOAEP224:RSAOAEP256:RSAOAEP384:RSAOAEP512:".indexOf(b)!=-1)return b;if(null===b||void 0===b)return"RSA";throw"getAlgByKeyAndName: not supported algorithm name for RSAKey: "+b}throw"getAlgByKeyAndName: not supported algorithm name: "+b},KJUR.crypto.OID=new function(){this.oidhex2name={"2a864886f70d010101":"rsaEncryption","2a8648ce3d0201":"ecPublicKey","2a8648ce380401":"dsa","2a8648ce3d030107":"secp256r1","2b8104001f":"secp192k1","2b81040021":"secp224r1","2b8104000a":"secp256k1","2b81040023":"secp521r1","2b81040022":"secp384r1","2a8648ce380403":"SHA1withDSA","608648016503040301":"SHA224withDSA","608648016503040302":"SHA256withDSA"}};
 /* base64x-1.1.min.js  */
-/*! base64x-1.1.3 (c) 2012-2014 Kenji Urushima | kjur.github.com/jsjws/license
+/*! base64x-1.1.8 (c) 2012-2016 Kenji Urushima | kjur.github.com/jsrsasign/license
  */
-function Base64x(){}function stoBA(d){var b=new Array();for(var c=0;c<d.length;c++){b[c]=d.charCodeAt(c)}return b}function BAtos(b){var d="";for(var c=0;c<b.length;c++){d=d+String.fromCharCode(b[c])}return d}function BAtohex(b){var e="";for(var d=0;d<b.length;d++){var c=b[d].toString(16);if(c.length==1){c="0"+c}e=e+c}return e}function stohex(a){return BAtohex(stoBA(a))}function stob64(a){return hex2b64(stohex(a))}function stob64u(a){return b64tob64u(hex2b64(stohex(a)))}function b64utos(a){return BAtos(b64toBA(b64utob64(a)))}function b64tob64u(a){a=a.replace(/\=/g,"");a=a.replace(/\+/g,"-");a=a.replace(/\//g,"_");return a}function b64utob64(a){if(a.length%4==2){a=a+"=="}else{if(a.length%4==3){a=a+"="}}a=a.replace(/-/g,"+");a=a.replace(/_/g,"/");return a}function hextob64u(a){return b64tob64u(hex2b64(a))}function b64utohex(a){return b64tohex(b64utob64(a))}var utf8tob64u,b64utoutf8;if(typeof Buffer==="function"){utf8tob64u=function(a){return b64tob64u(new Buffer(a,"utf8").toString("base64"))};b64utoutf8=function(a){return new Buffer(b64utob64(a),"base64").toString("utf8")}}else{utf8tob64u=function(a){return hextob64u(uricmptohex(encodeURIComponentAll(a)))};b64utoutf8=function(a){return decodeURIComponent(hextouricmp(b64utohex(a)))}}function utf8tob64(a){return hex2b64(uricmptohex(encodeURIComponentAll(a)))}function b64toutf8(a){return decodeURIComponent(hextouricmp(b64tohex(a)))}function utf8tohex(a){return uricmptohex(encodeURIComponentAll(a))}function hextoutf8(a){return decodeURIComponent(hextouricmp(a))}function hextorstr(c){var b="";for(var a=0;a<c.length-1;a+=2){b+=String.fromCharCode(parseInt(c.substr(a,2),16))}return b}function rstrtohex(c){var a="";for(var b=0;b<c.length;b++){a+=("0"+c.charCodeAt(b).toString(16)).slice(-2)}return a}function hextob64(a){return hex2b64(a)}function hextob64nl(b){var a=hextob64(b);var c=a.replace(/(.{64})/g,"$1\r\n");c=c.replace(/\r\n$/,"");return c}function b64nltohex(b){var a=b.replace(/[^0-9A-Za-z\/+=]*/g,"");var c=b64tohex(a);return c}function uricmptohex(a){return a.replace(/%/g,"")}function hextouricmp(a){return a.replace(/(..)/g,"%$1")}function encodeURIComponentAll(a){var d=encodeURIComponent(a);var b="";for(var c=0;c<d.length;c++){if(d[c]=="%"){b=b+d.substr(c,3);c=c+2}else{b=b+"%"+stohex(d[c])}}return b}function newline_toUnix(a){a=a.replace(/\r\n/mg,"\n");return a}function newline_toDos(a){a=a.replace(/\r\n/mg,"\n");a=a.replace(/\n/mg,"\r\n");return a};
-/* ext/prng4-min.js  */
+var KJUR; if (typeof KJUR == "undefined" || !KJUR) KJUR = {}; if (typeof KJUR.lang == "undefined" || !KJUR.lang) KJUR.lang = {}; KJUR.lang.String = function() {}; function Base64x() { } function stoBA(s) { var a = new Array(); for (var i = 0; i < s.length; i++) { a[i] = s.charCodeAt(i); } return a; } function BAtos(a) { var s = ""; for (var i = 0; i < a.length; i++) { s = s + String.fromCharCode(a[i]); } return s; } function BAtohex(a) { var s = ""; for (var i = 0; i < a.length; i++) { var hex1 = a[i].toString(16); if (hex1.length == 1) hex1 = "0" + hex1; s = s + hex1; } return s; } function stohex(s) { return BAtohex(stoBA(s)); } function stob64(s) { return hex2b64(stohex(s)); } function stob64u(s) { return b64tob64u(hex2b64(stohex(s))); } function b64utos(s) { return BAtos(b64toBA(b64utob64(s))); } function b64tob64u(s) { s = s.replace(/\=/g, ""); s = s.replace(/\+/g, "-"); s = s.replace(/\//g, "_"); return s; } function b64utob64(s) { if (s.length % 4 == 2) s = s + "=="; else if (s.length % 4 == 3) s = s + "="; s = s.replace(/-/g, "+"); s = s.replace(/_/g, "/"); return s; } function hextob64u(s) { if (s.length % 2 == 1) s = "0" + s; return b64tob64u(hex2b64(s)); } function b64utohex(s) { return b64tohex(b64utob64(s)); } var utf8tob64u, b64utoutf8; if (typeof Buffer === 'function') { utf8tob64u = function (s) { return b64tob64u(new Buffer(s, 'utf8').toString('base64')); }; b64utoutf8 = function (s) { return new Buffer(b64utob64(s), 'base64').toString('utf8'); }; } else { utf8tob64u = function (s) { return hextob64u(uricmptohex(encodeURIComponentAll(s))); }; b64utoutf8 = function (s) { return decodeURIComponent(hextouricmp(b64utohex(s))); }; } function utf8tob64(s) { return hex2b64(uricmptohex(encodeURIComponentAll(s))); } function b64toutf8(s) { return decodeURIComponent(hextouricmp(b64tohex(s))); } function utf8tohex(s) { return uricmptohex(encodeURIComponentAll(s)); } function hextoutf8(s) { return decodeURIComponent(hextouricmp(s)); } function hextorstr(sHex) { var s = ""; for (var i = 0; i < sHex.length - 1; i += 2) { s += String.fromCharCode(parseInt(sHex.substr(i, 2), 16)); } return s; } function rstrtohex(s) { var result = ""; for (var i = 0; i < s.length; i++) { result += ("0" + s.charCodeAt(i).toString(16)).slice(-2); } return result; } function hextob64(s) { return hex2b64(s); } function hextob64nl(s) { var b64 = hextob64(s); var b64nl = b64.replace(/(.{64})/g, "$1\r\n"); b64nl = b64nl.replace(/\r\n$/, ''); return b64nl; } function b64nltohex(s) { var b64 = s.replace(/[^0-9A-Za-z\/+=]*/g, ''); var hex = b64tohex(b64); return hex; } function hextoArrayBuffer(hex) { if (hex.length % 2 != 0) throw "input is not even length"; if (hex.match(/^[0-9A-Fa-f]+$/) == null) throw "input is not hexadecimal"; var buffer = new ArrayBuffer(hex.length / 2); var view = new DataView(buffer); for (var i = 0; i < hex.length / 2; i++) { view.setUint8(i, parseInt(hex.substr(i * 2, 2), 16)); } return buffer; } function ArrayBuffertohex(buffer) { var hex = ""; var view = new DataView(buffer); for (var i = 0; i < buffer.byteLength; i++) { hex += ("00" + view.getUint8(i).toString(16)).slice(-2); } return hex; } function uricmptohex(s) { return s.replace(/%/g, ""); } function hextouricmp(s) { return s.replace(/(..)/g, "%$1"); } function encodeURIComponentAll(u8) { var s = encodeURIComponent(u8); var s2 = ""; for (var i = 0; i < s.length; i++) { if (s[i] == "%") { s2 = s2 + s.substr(i, 3); i = i + 2; } else { s2 = s2 + "%" + stohex(s[i]); } } return s2; } function newline_toUnix(s) { s = s.replace(/\r\n/mg, "\n"); return s; } function newline_toDos(s) { s = s.replace(/\r\n/mg, "\n"); s = s.replace(/\n/mg, "\r\n"); return s; } KJUR.lang.String.isInteger = function(s) { if (s.match(/^[0-9]+$/)) { return true; } else if (s.match(/^-[0-9]+$/)) { return true; } else { return false; } }; KJUR.lang.String.isHex = function(s) { if (s.length % 2 == 0 && (s.match(/^[0-9a-f]+$/) || s.match(/^[0-9A-F]+$/))) { return true; } else { return false; } }; KJUR.lang.String.isBase64 = function(s) { s = s.replace(/\s+/g, ""); if (s.match(/^[0-9A-Za-z+\/]+={0,3}$/) && s.length % 4 == 0) { return true; } else { return false; } }; KJUR.lang.String.isBase64URL = function(s) { if (s.match(/[+/=]/)) return false; s = b64utob64(s); return KJUR.lang.String.isBase64(s); }; KJUR.lang.String.isIntegerArray = function(s) { s = s.replace(/\s+/g, ""); if (s.match(/^\[[0-9,]+\]$/)) { return true; } else { return false; } }; function intarystrtohex(s) { s = s.replace(/^\s*\[\s*/, ''); s = s.replace(/\s*\]\s*$/, ''); s = s.replace(/\s*/g, ''); try { var hex = s.split(/,/).map(function(element, index, array) { var i = parseInt(element); if (i < 0 || 255 < i) throw "integer not in range 0-255"; var hI = ("00" + i.toString(16)).slice(-2); return hI; }).join(''); return hex; } catch(ex) { throw "malformed integer array string: " + ex; } } var strdiffidx = function(s1, s2) { var n = s1.length; if (s1.length > s2.length) n = s2.length; for (var i = 0; i < n; i++) { if (s1.charCodeAt(i) != s2.charCodeAt(i)) return i; } if (s1.length != s2.length) return n; return -1; };/* ext/prng4-min.js  */
 /*! (c) Tom Wu | http://www-cs-students.stanford.edu/~tjw/jsbn/
  */
 function Arcfour(){this.i=0;this.j=0;this.S=new Array()}function ARC4init(d){var c,a,b;for(c=0;c<256;++c){this.S[c]=c}a=0;for(c=0;c<256;++c){a=(a+this.S[c]+d[c%d.length])&255;b=this.S[c];this.S[c]=this.S[a];this.S[a]=b}this.i=0;this.j=0}function ARC4next(){var a;this.i=(this.i+1)&255;this.j=(this.j+this.S[this.i])&255;a=this.S[this.i];this.S[this.i]=this.S[this.j];this.S[this.j]=a;return this.S[(a+this.S[this.i])&255]}Arcfour.prototype.init=ARC4init;Arcfour.prototype.next=ARC4next;function prng_newstate(){return new Arcfour()}var rng_psize=256;
@@ -986,7 +1134,11 @@ var rng_state;var rng_pool;var rng_pptr;function rng_seed_int(a){rng_pool[rng_pp
 /*! Mike Samuel (c) 2009 | code.google.com/p/json-sans-eval
  */
 var jsonParse=(function(){var e="(?:-?\\b(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\\b)";var j='(?:[^\\0-\\x08\\x0a-\\x1f"\\\\]|\\\\(?:["/\\\\bfnrt]|u[0-9A-Fa-f]{4}))';var i='(?:"'+j+'*")';var d=new RegExp("(?:false|true|null|[\\{\\}\\[\\]]|"+e+"|"+i+")","g");var k=new RegExp("\\\\(?:([^u])|u(.{4}))","g");var g={'"':'"',"/":"/","\\":"\\",b:"\b",f:"\f",n:"\n",r:"\r",t:"\t"};function h(l,m,n){return m?g[m]:String.fromCharCode(parseInt(n,16))}var c=new String("");var a="\\";var f={"{":Object,"[":Array};var b=Object.hasOwnProperty;return function(u,q){var p=u.match(d);var x;var v=p[0];var l=false;if("{"===v){x={}}else{if("["===v){x=[]}else{x=[];l=true}}var t;var r=[x];for(var o=1-l,m=p.length;o<m;++o){v=p[o];var w;switch(v.charCodeAt(0)){default:w=r[0];w[t||w.length]=+(v);t=void 0;break;case 34:v=v.substring(1,v.length-1);if(v.indexOf(a)!==-1){v=v.replace(k,h)}w=r[0];if(!t){if(w instanceof Array){t=w.length}else{t=v||c;break}}w[t]=v;t=void 0;break;case 91:w=r[0];r.unshift(w[t||w.length]=[]);t=void 0;break;case 93:r.shift();break;case 102:w=r[0];w[t||w.length]=false;t=void 0;break;case 110:w=r[0];w[t||w.length]=null;t=void 0;break;case 116:w=r[0];w[t||w.length]=true;t=void 0;break;case 123:w=r[0];r.unshift(w[t||w.length]={});t=void 0;break;case 125:r.shift();break}}if(l){if(r.length!==1){throw new Error()}x=x[0]}else{if(r.length){throw new Error()}}if(q){var s=function(C,B){var D=C[B];if(D&&typeof D==="object"){var n=null;for(var z in D){if(b.call(D,z)&&D!==C){var y=s(D,z);if(y!==void 0){D[z]=y}else{if(!n){n=[]}n.push(z)}}}if(n){for(var A=n.length;--A>=0;){delete D[n[A]]}}}return q.call(C,B,D)};x=s({"":x},"")}return x}})();
-/* jws-3.2.min.js  */
-/*! jws-3.2.2 (c) 2013-2015 Kenji Urushima | kjur.github.com/jsjws/license
+/* jws-3.3.min.js  */
+/*! jws-3.3.5 (c) 2013-2016 Kenji Urushima | kjur.github.com/jsrsasign/license
  */
-if(typeof KJUR=="undefined"||!KJUR){KJUR={}}if(typeof KJUR.jws=="undefined"||!KJUR.jws){KJUR.jws={}}KJUR.jws.JWS=function(){var i=KJUR.jws.JWS;this.parseJWS=function(o,q){if((this.parsedJWS!==undefined)&&(q||(this.parsedJWS.sigvalH!==undefined))){return}if(o.match(/^([^.]+)\.([^.]+)\.([^.]+)$/)==null){throw"JWS signature is not a form of 'Head.Payload.SigValue'."}var r=RegExp.$1;var m=RegExp.$2;var s=RegExp.$3;var u=r+"."+m;this.parsedJWS={};this.parsedJWS.headB64U=r;this.parsedJWS.payloadB64U=m;this.parsedJWS.sigvalB64U=s;this.parsedJWS.si=u;if(!q){var p=b64utohex(s);var n=parseBigInt(p,16);this.parsedJWS.sigvalH=p;this.parsedJWS.sigvalBI=n}var l=b64utoutf8(r);var t=b64utoutf8(m);this.parsedJWS.headS=l;this.parsedJWS.payloadS=t;if(!i.isSafeJSONString(l,this.parsedJWS,"headP")){throw"malformed JSON string for JWS Head: "+l}};function b(m,l){return utf8tob64u(m)+"."+utf8tob64u(l)}function f(n,m){var l=function(o){return KJUR.crypto.Util.hashString(o,m)};if(l==null){throw"hash function not defined in jsrsasign: "+m}return l(n)}function h(r,o,l,p,n){var q=b(r,o);var m=parseBigInt(l,16);return _rsasign_verifySignatureWithArgs(q,m,p,n)}this.verifyJWSByNE=function(n,m,l){this.parseJWS(n);return _rsasign_verifySignatureWithArgs(this.parsedJWS.si,this.parsedJWS.sigvalBI,m,l)};this.verifyJWSByKey=function(o,n){this.parseJWS(o);var l=c(this.parsedJWS.headP);var m=this.parsedJWS.headP.alg.substr(0,2)=="PS";if(n.hashAndVerify){return n.hashAndVerify(l,new Buffer(this.parsedJWS.si,"utf8").toString("base64"),b64utob64(this.parsedJWS.sigvalB64U),"base64",m)}else{if(m){return n.verifyStringPSS(this.parsedJWS.si,this.parsedJWS.sigvalH,l)}else{return n.verifyString(this.parsedJWS.si,this.parsedJWS.sigvalH)}}};this.verifyJWSByPemX509Cert=function(n,l){this.parseJWS(n);var m=new X509();m.readCertPEM(l);return m.subjectPublicKeyRSA.verifyString(this.parsedJWS.si,this.parsedJWS.sigvalH)};function c(m){var n=m.alg;var l="";if(n!="RS256"&&n!="RS512"&&n!="PS256"&&n!="PS512"){throw"JWS signature algorithm not supported: "+n}if(n.substr(2)=="256"){l="sha256"}if(n.substr(2)=="512"){l="sha512"}return l}function e(l){return c(jsonParse(l))}function k(l,q,t,n,r,s){var o=new RSAKey();o.setPrivate(n,r,s);var m=e(l);var p=o.signString(t,m);return p}function j(r,q,p,o,n){var l=null;if(typeof n=="undefined"){l=e(r)}else{l=c(n)}var m=n.alg.substr(0,2)=="PS";if(o.hashAndSign){return b64tob64u(o.hashAndSign(l,p,"binary","base64",m))}else{if(m){return hextob64u(o.signStringPSS(p,l))}else{return hextob64u(o.signString(p,l))}}}function g(q,n,p,m,o){var l=b(q,n);return k(q,n,l,p,m,o)}this.generateJWSByNED=function(s,o,r,n,q){if(!i.isSafeJSONString(s)){throw"JWS Head is not safe JSON string: "+s}var m=b(s,o);var p=k(s,o,m,r,n,q);var l=hextob64u(p);this.parsedJWS={};this.parsedJWS.headB64U=m.split(".")[0];this.parsedJWS.payloadB64U=m.split(".")[1];this.parsedJWS.sigvalB64U=l;return m+"."+l};this.generateJWSByKey=function(q,o,l){var p={};if(!i.isSafeJSONString(q,p,"headP")){throw"JWS Head is not safe JSON string: "+q}var n=b(q,o);var m=j(q,o,n,l,p.headP);this.parsedJWS={};this.parsedJWS.headB64U=n.split(".")[0];this.parsedJWS.payloadB64U=n.split(".")[1];this.parsedJWS.sigvalB64U=m;return n+"."+m};function d(r,q,p,m){var o=new RSAKey();o.readPrivateKeyFromPEMString(m);var l=e(r);var n=o.signString(p,l);return n}this.generateJWSByP1PrvKey=function(q,o,l){if(!i.isSafeJSONString(q)){throw"JWS Head is not safe JSON string: "+q}var n=b(q,o);var p=d(q,o,n,l);var m=hextob64u(p);this.parsedJWS={};this.parsedJWS.headB64U=n.split(".")[0];this.parsedJWS.payloadB64U=n.split(".")[1];this.parsedJWS.sigvalB64U=m;return n+"."+m}};KJUR.jws.JWS.sign=function(b,p,i,l,k){var j=KJUR.jws.JWS;if(!j.isSafeJSONString(p)){throw"JWS Head is not safe JSON string: "+p}var e=j.readSafeJSONString(p);if((b==""||b==null)&&e.alg!==undefined){b=e.alg}if((b!=""&&b!=null)&&e.alg===undefined){e.alg=b;p=JSON.stringify(e)}var d=null;if(j.jwsalg2sigalg[b]===undefined){throw"unsupported alg name: "+b}else{d=j.jwsalg2sigalg[b]}var c=utf8tob64u(p);var g=utf8tob64u(i);var n=c+"."+g;var m="";if(d.substr(0,4)=="Hmac"){if(l===undefined){throw"hexadecimal key shall be specified for HMAC"}var h=new KJUR.crypto.Mac({alg:d,pass:hextorstr(l)});h.updateString(n);m=h.doFinal()}else{if(d.indexOf("withECDSA")!=-1){var o=new KJUR.crypto.Signature({alg:d});o.init(l,k);o.updateString(n);hASN1Sig=o.sign();m=KJUR.crypto.ECDSA.asn1SigToConcatSig(hASN1Sig)}else{if(d!="none"){var o=new KJUR.crypto.Signature({alg:d});o.init(l,k);o.updateString(n);m=o.sign()}}}var f=hextob64u(m);return n+"."+f};KJUR.jws.JWS.verify=function(o,s,j){var l=KJUR.jws.JWS;var p=o.split(".");var d=p[0];var k=p[1];var b=d+"."+k;var q=b64utohex(p[2]);var i=l.readSafeJSONString(b64utoutf8(p[0]));var h=null;var r=null;if(i.alg===undefined){throw"algorithm not specified in header"}else{h=i.alg;r=h.substr(0,2)}if(j!=null&&Object.prototype.toString.call(j)==="[object Array]"&&j.length>0){var c=":"+j.join(":")+":";if(c.indexOf(":"+h+":")==-1){throw"algorithm '"+h+"' not accepted in the list"}}if(h!="none"&&s===null){throw"key shall be specified to verify."}if(r=="HS"){if(typeof s!="string"&&s.length!=0&&s.length%2!=0&&!s.match(/^[0-9A-Fa-f]+/)){throw"key shall be a hexadecimal str for HS* algs"}}if(typeof s=="string"&&s.indexOf("-----BEGIN ")!=-1){s=KEYUTIL.getKey(s)}if(r=="RS"||r=="PS"){if(!(s instanceof RSAKey)){throw"key shall be a RSAKey obj for RS* and PS* algs"}}if(r=="ES"){if(!(s instanceof KJUR.crypto.ECDSA)){throw"key shall be a ECDSA obj for ES* algs"}}if(h=="none"){}var m=null;if(l.jwsalg2sigalg[i.alg]===undefined){throw"unsupported alg name: "+h}else{m=l.jwsalg2sigalg[h]}if(m=="none"){throw"not supported"}else{if(m.substr(0,4)=="Hmac"){if(s===undefined){throw"hexadecimal key shall be specified for HMAC"}var g=new KJUR.crypto.Mac({alg:m,pass:hextorstr(s)});g.updateString(b);hSig2=g.doFinal();return q==hSig2}else{if(m.indexOf("withECDSA")!=-1){var f=null;try{f=KJUR.crypto.ECDSA.concatSigToASN1Sig(q)}catch(n){return false}var e=new KJUR.crypto.Signature({alg:m});e.init(s);e.updateString(b);return e.verify(f)}else{var e=new KJUR.crypto.Signature({alg:m});e.init(s);e.updateString(b);return e.verify(q)}}}};KJUR.jws.JWS.jwsalg2sigalg={HS256:"HmacSHA256",HS384:"HmacSHA384",HS512:"HmacSHA512",RS256:"SHA256withRSA",RS384:"SHA384withRSA",RS512:"SHA512withRSA",ES256:"SHA256withECDSA",ES384:"SHA384withECDSA",PS256:"SHA256withRSAandMGF1",PS384:"SHA384withRSAandMGF1",PS512:"SHA512withRSAandMGF1",none:"none",};KJUR.jws.JWS.isSafeJSONString=function(d,c,e){var f=null;try{f=jsonParse(d);if(typeof f!="object"){return 0}if(f.constructor===Array){return 0}if(c){c[e]=f}return 1}catch(b){return 0}};KJUR.jws.JWS.readSafeJSONString=function(c){var d=null;try{d=jsonParse(c);if(typeof d!="object"){return null}if(d.constructor===Array){return null}return d}catch(b){return null}};KJUR.jws.JWS.getEncodedSignatureValueFromJWS=function(b){if(b.match(/^[^.]+\.[^.]+\.([^.]+)$/)==null){throw"JWS signature is not a form of 'Head.Payload.SigValue'."}return RegExp.$1};KJUR.jws.IntDate=function(){};KJUR.jws.IntDate.get=function(b){if(b=="now"){return KJUR.jws.IntDate.getNow()}else{if(b=="now + 1hour"){return KJUR.jws.IntDate.getNow()+60*60}else{if(b=="now + 1day"){return KJUR.jws.IntDate.getNow()+60*60*24}else{if(b=="now + 1month"){return KJUR.jws.IntDate.getNow()+60*60*24*30}else{if(b=="now + 1year"){return KJUR.jws.IntDate.getNow()+60*60*24*365}else{if(b.match(/Z$/)){return KJUR.jws.IntDate.getZulu(b)}else{if(b.match(/^[0-9]+$/)){return parseInt(b)}}}}}}}throw"unsupported format: "+b};KJUR.jws.IntDate.getZulu=function(h){if(a=h.match(/(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)Z/)){var g=parseInt(RegExp.$1);var i=parseInt(RegExp.$2)-1;var c=parseInt(RegExp.$3);var b=parseInt(RegExp.$4);var e=parseInt(RegExp.$5);var f=parseInt(RegExp.$6);var j=new Date(Date.UTC(g,i,c,b,e,f));return ~~(j/1000)}throw"unsupported format: "+h};KJUR.jws.IntDate.getNow=function(){var b=~~(new Date()/1000);return b};KJUR.jws.IntDate.intDate2UTCString=function(b){var c=new Date(b*1000);return c.toUTCString()};KJUR.jws.IntDate.intDate2Zulu=function(f){var j=new Date(f*1000);var i=("0000"+j.getUTCFullYear()).slice(-4);var h=("00"+(j.getUTCMonth()+1)).slice(-2);var c=("00"+j.getUTCDate()).slice(-2);var b=("00"+j.getUTCHours()).slice(-2);var e=("00"+j.getUTCMinutes()).slice(-2);var g=("00"+j.getUTCSeconds()).slice(-2);return i+h+c+b+e+g+"Z"};
+"undefined"!=typeof KJUR&&KJUR||(KJUR={}),"undefined"!=typeof KJUR.jws&&KJUR.jws||(KJUR.jws={}),KJUR.jws.JWS=function(){var a=KJUR.jws.JWS;this.parseJWS=function(b,c){if(void 0===this.parsedJWS||!c&&void 0===this.parsedJWS.sigvalH){var d=b.match(/^([^.]+)\.([^.]+)\.([^.]+)$/);if(null==d)throw"JWS signature is not a form of 'Head.Payload.SigValue'.";var e=d[1],f=d[2],g=d[3],h=e+"."+f;if(this.parsedJWS={},this.parsedJWS.headB64U=e,this.parsedJWS.payloadB64U=f,this.parsedJWS.sigvalB64U=g,this.parsedJWS.si=h,!c){var i=b64utohex(g),j=parseBigInt(i,16);this.parsedJWS.sigvalH=i,this.parsedJWS.sigvalBI=j}var k=b64utoutf8(e),l=b64utoutf8(f);if(this.parsedJWS.headS=k,this.parsedJWS.payloadS=l,!a.isSafeJSONString(k,this.parsedJWS,"headP"))throw"malformed JSON string for JWS Head: "+k}}},KJUR.jws.JWS.sign=function(a,b,c,d,e){var g,h,i,f=KJUR.jws.JWS;if("string"!=typeof b&&"object"!=typeof b)throw"spHeader must be JSON string or object: "+b;if("object"==typeof b&&(h=b,g=JSON.stringify(h)),"string"==typeof b){if(g=b,!f.isSafeJSONString(g))throw"JWS Head is not safe JSON string: "+g;h=f.readSafeJSONString(g)}if(i=c,"object"==typeof c&&(i=JSON.stringify(c)),""!=a&&null!=a||void 0===h.alg||(a=h.alg),""!=a&&null!=a&&void 0===h.alg&&(h.alg=a,g=JSON.stringify(h)),a!==h.alg)throw"alg and sHeader.alg doesn't match: "+a+"!="+h.alg;var j=null;if(void 0===f.jwsalg2sigalg[a])throw"unsupported alg name: "+a;j=f.jwsalg2sigalg[a];var k=utf8tob64u(g),l=utf8tob64u(i),m=k+"."+l,n="";if("Hmac"==j.substr(0,4)){if(void 0===d)throw"mac key shall be specified for HS* alg";var o=new KJUR.crypto.Mac({alg:j,prov:"cryptojs",pass:d});o.updateString(m),n=o.doFinal()}else if(j.indexOf("withECDSA")!=-1){var p=new KJUR.crypto.Signature({alg:j});p.init(d,e),p.updateString(m),hASN1Sig=p.sign(),n=KJUR.crypto.ECDSA.asn1SigToConcatSig(hASN1Sig)}else if("none"!=j){var p=new KJUR.crypto.Signature({alg:j});p.init(d,e),p.updateString(m),n=p.sign()}var q=hextob64u(n);return m+"."+q},KJUR.jws.JWS.verify=function(a,b,c){var d=KJUR.jws.JWS,e=a.split("."),f=e[0],g=e[1],h=f+"."+g,i=b64utohex(e[2]),j=d.readSafeJSONString(b64utoutf8(e[0])),k=null,l=null;if(void 0===j.alg)throw"algorithm not specified in header";if(k=j.alg,l=k.substr(0,2),null!=c&&"[object Array]"===Object.prototype.toString.call(c)&&c.length>0){var m=":"+c.join(":")+":";if(m.indexOf(":"+k+":")==-1)throw"algorithm '"+k+"' not accepted in the list"}if("none"!=k&&null===b)throw"key shall be specified to verify.";if("string"==typeof b&&b.indexOf("-----BEGIN ")!=-1&&(b=KEYUTIL.getKey(b)),!("RS"!=l&&"PS"!=l||b instanceof RSAKey))throw"key shall be a RSAKey obj for RS* and PS* algs";if("ES"==l&&!(b instanceof KJUR.crypto.ECDSA))throw"key shall be a ECDSA obj for ES* algs";var n=null;if(void 0===d.jwsalg2sigalg[j.alg])throw"unsupported alg name: "+k;if(n=d.jwsalg2sigalg[k],"none"==n)throw"not supported";if("Hmac"==n.substr(0,4)){var o=null;if(void 0===b)throw"hexadecimal key shall be specified for HMAC";var p=new KJUR.crypto.Mac({alg:n,pass:b});return p.updateString(h),o=p.doFinal(),i==o}if(n.indexOf("withECDSA")!=-1){var q=null;try{q=KJUR.crypto.ECDSA.concatSigToASN1Sig(i)}catch(a){return!1}var r=new KJUR.crypto.Signature({alg:n});return r.init(b),r.updateString(h),r.verify(q)}var r=new KJUR.crypto.Signature({alg:n});return r.init(b),r.updateString(h),r.verify(i)},KJUR.jws.JWS.parse=function(a){var d,e,f,b=a.split("."),c={};if(2!=b.length&&3!=b.length)throw"malformed sJWS: wrong number of '.' splitted elements";return d=b[0],e=b[1],3==b.length&&(f=b[2]),c.headerObj=KJUR.jws.JWS.readSafeJSONString(b64utoutf8(d)),c.payloadObj=KJUR.jws.JWS.readSafeJSONString(b64utoutf8(e)),c.headerPP=JSON.stringify(c.headerObj,null,"  "),null==c.payloadObj?c.payloadPP=b64utoutf8(e):c.payloadPP=JSON.stringify(c.payloadObj,null,"  "),void 0!==f&&(c.sigHex=b64utohex(f)),c},KJUR.jws.JWS.verifyJWT=function(a,b,c){var d=KJUR.jws.JWS,e=a.split("."),f=e[0],g=e[1],j=(b64utohex(e[2]),d.readSafeJSONString(b64utoutf8(f))),k=d.readSafeJSONString(b64utoutf8(g));if(void 0===j.alg)return!1;if(void 0===c.alg)throw"acceptField.alg shall be specified";if(!d.inArray(j.alg,c.alg))return!1;if(void 0!==k.iss&&"object"==typeof c.iss&&!d.inArray(k.iss,c.iss))return!1;if(void 0!==k.sub&&"object"==typeof c.sub&&!d.inArray(k.sub,c.sub))return!1;if(void 0!==k.aud&&"object"==typeof c.aud)if("string"==typeof k.aud){if(!d.inArray(k.aud,c.aud))return!1}else if("object"==typeof k.aud&&!d.includedArray(k.aud,c.aud))return!1;var l=KJUR.jws.IntDate.getNow();return void 0!==c.verifyAt&&"number"==typeof c.verifyAt&&(l=c.verifyAt),void 0!==c.gracePeriod&&"number"==typeof c.gracePeriod||(c.gracePeriod=0),!(void 0!==k.exp&&"number"==typeof k.exp&&k.exp+c.gracePeriod<l)&&(!(void 0!==k.nbf&&"number"==typeof k.nbf&&l<k.nbf-c.gracePeriod)&&(!(void 0!==k.iat&&"number"==typeof k.iat&&l<k.iat-c.gracePeriod)&&((void 0===k.jti||void 0===c.jti||k.jti===c.jti)&&!!KJUR.jws.JWS.verify(a,b,c.alg))))},KJUR.jws.JWS.includedArray=function(a,b){var c=KJUR.jws.JWS.inArray;if(null===a)return!1;if("object"!=typeof a)return!1;if("number"!=typeof a.length)return!1;for(var d=0;d<a.length;d++)if(!c(a[d],b))return!1;return!0},KJUR.jws.JWS.inArray=function(a,b){if(null===b)return!1;if("object"!=typeof b)return!1;if("number"!=typeof b.length)return!1;for(var c=0;c<b.length;c++)if(b[c]==a)return!0;return!1},KJUR.jws.JWS.jwsalg2sigalg={HS256:"HmacSHA256",HS384:"HmacSHA384",HS512:"HmacSHA512",RS256:"SHA256withRSA",RS384:"SHA384withRSA",RS512:"SHA512withRSA",ES256:"SHA256withECDSA",ES384:"SHA384withECDSA",PS256:"SHA256withRSAandMGF1",PS384:"SHA384withRSAandMGF1",PS512:"SHA512withRSAandMGF1",none:"none"},KJUR.jws.JWS.isSafeJSONString=function(a,b,c){var d=null;try{return d=jsonParse(a),"object"!=typeof d?0:d.constructor===Array?0:(b&&(b[c]=d),1)}catch(a){return 0}},KJUR.jws.JWS.readSafeJSONString=function(a){var b=null;try{return b=jsonParse(a),"object"!=typeof b?null:b.constructor===Array?null:b}catch(a){return null}},KJUR.jws.JWS.getEncodedSignatureValueFromJWS=function(a){var b=a.match(/^[^.]+\.[^.]+\.([^.]+)$/);if(null==b)throw"JWS signature is not a form of 'Head.Payload.SigValue'.";return b[1]},KJUR.jws.JWS.getJWKthumbprint=function(a){if("RSA"!==a.kty&&"EC"!==a.kty&&"oct"!==a.kty)throw"unsupported algorithm for JWK Thumprint";var b="{";if("RSA"===a.kty){if("string"!=typeof a.n||"string"!=typeof a.e)throw"wrong n and e value for RSA key";b+='"e":"'+a.e+'",',b+='"kty":"'+a.kty+'",',b+='"n":"'+a.n+'"}'}else if("EC"===a.kty){if("string"!=typeof a.crv||"string"!=typeof a.x||"string"!=typeof a.y)throw"wrong crv, x and y value for EC key";b+='"crv":"'+a.crv+'",',b+='"kty":"'+a.kty+'",',b+='"x":"'+a.x+'",',b+='"y":"'+a.y+'"}'}else if("oct"===a.kty){if("string"!=typeof a.k)throw"wrong k value for oct(symmetric) key";b+='"kty":"'+a.kty+'",',b+='"k":"'+a.k+'"}'}var c=rstrtohex(b),d=KJUR.crypto.Util.hashHex(c,"sha256"),e=hextob64u(d);return e},KJUR.jws.IntDate={},KJUR.jws.IntDate.get=function(a){if("now"==a)return KJUR.jws.IntDate.getNow();if("now + 1hour"==a)return KJUR.jws.IntDate.getNow()+3600;if("now + 1day"==a)return KJUR.jws.IntDate.getNow()+86400;if("now + 1month"==a)return KJUR.jws.IntDate.getNow()+2592e3;if("now + 1year"==a)return KJUR.jws.IntDate.getNow()+31536e3;if(a.match(/Z$/))return KJUR.jws.IntDate.getZulu(a);if(a.match(/^[0-9]+$/))return parseInt(a);throw"unsupported format: "+a},KJUR.jws.IntDate.getZulu=function(a){var b=a.match(/(\d+)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)Z/);if(b){var c=b[1],d=parseInt(c);if(4==c.length);else{if(2!=c.length)throw"malformed year string";if(50<=d&&d<100)d=1900+d;else{if(!(0<=d&&d<50))throw"malformed year string for UTCTime";d=2e3+d}}var e=parseInt(b[2])-1,f=parseInt(b[3]),g=parseInt(b[4]),h=parseInt(b[5]),i=parseInt(b[6]),j=new Date(Date.UTC(d,e,f,g,h,i));return~~(j/1e3)}throw"unsupported format: "+a},KJUR.jws.IntDate.getNow=function(){var a=~~(new Date/1e3);return a},KJUR.jws.IntDate.intDate2UTCString=function(a){var b=new Date(1e3*a);return b.toUTCString()},KJUR.jws.IntDate.intDate2Zulu=function(a){var b=new Date(1e3*a),c=("0000"+b.getUTCFullYear()).slice(-4),d=("00"+(b.getUTCMonth()+1)).slice(-2),e=("00"+b.getUTCDate()).slice(-2),f=("00"+b.getUTCHours()).slice(-2),g=("00"+b.getUTCMinutes()).slice(-2),h=("00"+b.getUTCSeconds()).slice(-2);return c+d+e+f+g+h+"Z"};
+/* keyutil-1.0.js  */
+/*! keyutil-1.0.14.js (c) 2013-2016 Kenji Urushima | kjur.github.com/jsrsasign/license
+ */
+var KEYUTIL=function(){var a=function(a,b,c){return d(CryptoJS.AES,a,b,c)},b=function(a,b,c){return d(CryptoJS.TripleDES,a,b,c)},c=function(a,b,c){return d(CryptoJS.DES,a,b,c)},d=function(a,b,c,d){var e=CryptoJS.enc.Hex.parse(b),f=CryptoJS.enc.Hex.parse(c),g=CryptoJS.enc.Hex.parse(d),h={};h.key=f,h.iv=g,h.ciphertext=e;var i=a.decrypt(h,f,{iv:g});return CryptoJS.enc.Hex.stringify(i)},e=function(a,b,c){return h(CryptoJS.AES,a,b,c)},f=function(a,b,c){return h(CryptoJS.TripleDES,a,b,c)},g=function(a,b,c){return h(CryptoJS.DES,a,b,c)},h=function(a,b,c,d){var e=CryptoJS.enc.Hex.parse(b),f=CryptoJS.enc.Hex.parse(c),g=CryptoJS.enc.Hex.parse(d),h=a.encrypt(e,f,{iv:g}),i=CryptoJS.enc.Hex.parse(h.toString()),j=CryptoJS.enc.Base64.stringify(i);return j},i={"AES-256-CBC":{proc:a,eproc:e,keylen:32,ivlen:16},"AES-192-CBC":{proc:a,eproc:e,keylen:24,ivlen:16},"AES-128-CBC":{proc:a,eproc:e,keylen:16,ivlen:16},"DES-EDE3-CBC":{proc:b,eproc:f,keylen:24,ivlen:8},"DES-CBC":{proc:c,eproc:g,keylen:8,ivlen:8}},j=function(a){return i[a].proc},k=function(a){var b=CryptoJS.lib.WordArray.random(a),c=CryptoJS.enc.Hex.stringify(b);return c},l=function(a){var b={},c=a.match(new RegExp("DEK-Info: ([^,]+),([0-9A-Fa-f]+)","m"));c&&(b.cipher=c[1],b.ivsalt=c[2]);var d=a.match(new RegExp("-----BEGIN ([A-Z]+) PRIVATE KEY-----"));d&&(b.type=d[1]);var e=-1,f=0;a.indexOf("\r\n\r\n")!=-1&&(e=a.indexOf("\r\n\r\n"),f=2),a.indexOf("\n\n")!=-1&&(e=a.indexOf("\n\n"),f=1);var g=a.indexOf("-----END");if(e!=-1&&g!=-1){var h=a.substring(e+2*f,g-f);h=h.replace(/\s+/g,""),b.data=h}return b},m=function(a,b,c){for(var d=c.substring(0,16),e=CryptoJS.enc.Hex.parse(d),f=CryptoJS.enc.Utf8.parse(b),g=i[a].keylen+i[a].ivlen,h="",j=null;;){var k=CryptoJS.algo.MD5.create();if(null!=j&&k.update(j),k.update(f),k.update(e),j=k.finalize(),h+=CryptoJS.enc.Hex.stringify(j),h.length>=2*g)break}var l={};return l.keyhex=h.substr(0,2*i[a].keylen),l.ivhex=h.substr(2*i[a].keylen,2*i[a].ivlen),l},n=function(a,b,c,d){var e=CryptoJS.enc.Base64.parse(a),f=CryptoJS.enc.Hex.stringify(e),g=i[b].proc,h=g(f,c,d);return h},o=function(a,b,c,d){var e=i[b].eproc,f=e(a,c,d);return f};return{version:"1.0.0",getHexFromPEM:function(a,b){var c=a;if(c.indexOf("-----BEGIN ")==-1)throw"can't find PEM header: "+b;"string"==typeof b&&""!=b?(c=c.replace("-----BEGIN "+b+"-----",""),c=c.replace("-----END "+b+"-----","")):(c=c.replace(/-----BEGIN [^-]+-----/,""),c=c.replace(/-----END [^-]+-----/,""));var d=c.replace(/\s+/g,""),e=b64tohex(d);return e},getDecryptedKeyHexByKeyIV:function(a,b,c,d){var e=j(b);return e(a,c,d)},parsePKCS5PEM:function(a){return l(a)},getKeyAndUnusedIvByPasscodeAndIvsalt:function(a,b,c){return m(a,b,c)},decryptKeyB64:function(a,b,c,d){return n(a,b,c,d)},getDecryptedKeyHex:function(a,b){var c=l(a),e=(c.type,c.cipher),f=c.ivsalt,g=c.data,h=m(e,b,f),i=h.keyhex,j=n(g,e,i,f);return j},getRSAKeyFromEncryptedPKCS5PEM:function(a,b){var c=this.getDecryptedKeyHex(a,b),d=new RSAKey;return d.readPrivateKeyFromASN1HexString(c),d},getEncryptedPKCS5PEMFromPrvKeyHex:function(a,b,c,d,e){var f="";if("undefined"!=typeof d&&null!=d||(d="AES-256-CBC"),"undefined"==typeof i[d])throw"KEYUTIL unsupported algorithm: "+d;if("undefined"==typeof e||null==e){var g=i[d].ivlen,h=k(g);e=h.toUpperCase()}var j=m(d,c,e),l=j.keyhex,n=o(b,d,l,e),p=n.replace(/(.{64})/g,"$1\r\n"),f="-----BEGIN "+a+" PRIVATE KEY-----\r\n";return f+="Proc-Type: 4,ENCRYPTED\r\n",f+="DEK-Info: "+d+","+e+"\r\n",f+="\r\n",f+=p,f+="\r\n-----END "+a+" PRIVATE KEY-----\r\n"},getEncryptedPKCS5PEMFromRSAKey:function(a,b,c,d){var e=new KJUR.asn1.DERInteger({int:0}),f=new KJUR.asn1.DERInteger({bigint:a.n}),g=new KJUR.asn1.DERInteger({int:a.e}),h=new KJUR.asn1.DERInteger({bigint:a.d}),i=new KJUR.asn1.DERInteger({bigint:a.p}),j=new KJUR.asn1.DERInteger({bigint:a.q}),k=new KJUR.asn1.DERInteger({bigint:a.dmp1}),l=new KJUR.asn1.DERInteger({bigint:a.dmq1}),m=new KJUR.asn1.DERInteger({bigint:a.coeff}),n=new KJUR.asn1.DERSequence({array:[e,f,g,h,i,j,k,l,m]}),o=n.getEncodedHex();return this.getEncryptedPKCS5PEMFromPrvKeyHex("RSA",o,b,c,d)},newEncryptedPKCS5PEM:function(a,b,c,d){"undefined"!=typeof b&&null!=b||(b=1024),"undefined"!=typeof c&&null!=c||(c="10001");var e=new RSAKey;e.generate(b,c);var f=null;return f="undefined"==typeof d||null==d?this.getEncryptedPKCS5PEMFromRSAKey(e,a):this.getEncryptedPKCS5PEMFromRSAKey(e,a,d)},getRSAKeyFromPlainPKCS8PEM:function(a){if(a.match(/ENCRYPTED/))throw"pem shall be not ENCRYPTED";var b=this.getHexFromPEM(a,"PRIVATE KEY"),c=this.getRSAKeyFromPlainPKCS8Hex(b);return c},getRSAKeyFromPlainPKCS8Hex:function(a){var b=ASN1HEX.getPosArrayOfChildren_AtObj(a,0);if(3!=b.length)throw"outer DERSequence shall have 3 elements: "+b.length;var c=ASN1HEX.getHexOfTLV_AtObj(a,b[1]);if("300d06092a864886f70d0101010500"!=c)throw"PKCS8 AlgorithmIdentifier is not rsaEnc: "+c;var c=ASN1HEX.getHexOfTLV_AtObj(a,b[1]),d=ASN1HEX.getHexOfTLV_AtObj(a,b[2]),e=ASN1HEX.getHexOfV_AtObj(d,0),f=new RSAKey;return f.readPrivateKeyFromASN1HexString(e),f},parseHexOfEncryptedPKCS8:function(a){var b={},c=ASN1HEX.getPosArrayOfChildren_AtObj(a,0);if(2!=c.length)throw"malformed format: SEQUENCE(0).items != 2: "+c.length;b.ciphertext=ASN1HEX.getHexOfV_AtObj(a,c[1]);var d=ASN1HEX.getPosArrayOfChildren_AtObj(a,c[0]);if(2!=d.length)throw"malformed format: SEQUENCE(0.0).items != 2: "+d.length;if("2a864886f70d01050d"!=ASN1HEX.getHexOfV_AtObj(a,d[0]))throw"this only supports pkcs5PBES2";var e=ASN1HEX.getPosArrayOfChildren_AtObj(a,d[1]);if(2!=d.length)throw"malformed format: SEQUENCE(0.0.1).items != 2: "+e.length;var f=ASN1HEX.getPosArrayOfChildren_AtObj(a,e[1]);if(2!=f.length)throw"malformed format: SEQUENCE(0.0.1.1).items != 2: "+f.length;if("2a864886f70d0307"!=ASN1HEX.getHexOfV_AtObj(a,f[0]))throw"this only supports TripleDES";b.encryptionSchemeAlg="TripleDES",b.encryptionSchemeIV=ASN1HEX.getHexOfV_AtObj(a,f[1]);var g=ASN1HEX.getPosArrayOfChildren_AtObj(a,e[0]);if(2!=g.length)throw"malformed format: SEQUENCE(0.0.1.0).items != 2: "+g.length;if("2a864886f70d01050c"!=ASN1HEX.getHexOfV_AtObj(a,g[0]))throw"this only supports pkcs5PBKDF2";var h=ASN1HEX.getPosArrayOfChildren_AtObj(a,g[1]);if(h.length<2)throw"malformed format: SEQUENCE(0.0.1.0.1).items < 2: "+h.length;b.pbkdf2Salt=ASN1HEX.getHexOfV_AtObj(a,h[0]);var i=ASN1HEX.getHexOfV_AtObj(a,h[1]);try{b.pbkdf2Iter=parseInt(i,16)}catch(a){throw"malformed format pbkdf2Iter: "+i}return b},getPBKDF2KeyHexFromParam:function(a,b){var c=CryptoJS.enc.Hex.parse(a.pbkdf2Salt),d=a.pbkdf2Iter,e=CryptoJS.PBKDF2(b,c,{keySize:6,iterations:d}),f=CryptoJS.enc.Hex.stringify(e);return f},getPlainPKCS8HexFromEncryptedPKCS8PEM:function(a,b){var c=this.getHexFromPEM(a,"ENCRYPTED PRIVATE KEY"),d=this.parseHexOfEncryptedPKCS8(c),e=KEYUTIL.getPBKDF2KeyHexFromParam(d,b),f={};f.ciphertext=CryptoJS.enc.Hex.parse(d.ciphertext);var g=CryptoJS.enc.Hex.parse(e),h=CryptoJS.enc.Hex.parse(d.encryptionSchemeIV),i=CryptoJS.TripleDES.decrypt(f,g,{iv:h}),j=CryptoJS.enc.Hex.stringify(i);return j},getRSAKeyFromEncryptedPKCS8PEM:function(a,b){var c=this.getPlainPKCS8HexFromEncryptedPKCS8PEM(a,b),d=this.getRSAKeyFromPlainPKCS8Hex(c);return d},getKeyFromEncryptedPKCS8PEM:function(a,b){var c=this.getPlainPKCS8HexFromEncryptedPKCS8PEM(a,b),d=this.getKeyFromPlainPrivatePKCS8Hex(c);return d},parsePlainPrivatePKCS8Hex:function(a){var b={};if(b.algparam=null,"30"!=a.substr(0,2))throw"malformed plain PKCS8 private key(code:001)";var c=ASN1HEX.getPosArrayOfChildren_AtObj(a,0);if(3!=c.length)throw"malformed plain PKCS8 private key(code:002)";if("30"!=a.substr(c[1],2))throw"malformed PKCS8 private key(code:003)";var d=ASN1HEX.getPosArrayOfChildren_AtObj(a,c[1]);if(2!=d.length)throw"malformed PKCS8 private key(code:004)";if("06"!=a.substr(d[0],2))throw"malformed PKCS8 private key(code:005)";if(b.algoid=ASN1HEX.getHexOfV_AtObj(a,d[0]),"06"==a.substr(d[1],2)&&(b.algparam=ASN1HEX.getHexOfV_AtObj(a,d[1])),"04"!=a.substr(c[2],2))throw"malformed PKCS8 private key(code:006)";return b.keyidx=ASN1HEX.getStartPosOfV_AtObj(a,c[2]),b},getKeyFromPlainPrivatePKCS8PEM:function(a){var b=this.getHexFromPEM(a,"PRIVATE KEY"),c=this.getKeyFromPlainPrivatePKCS8Hex(b);return c},getKeyFromPlainPrivatePKCS8Hex:function(a){var b=this.parsePlainPrivatePKCS8Hex(a);if("2a864886f70d010101"==b.algoid){this.parsePrivateRawRSAKeyHexAtObj(a,b);var c=b.key,d=new RSAKey;return d.setPrivateEx(c.n,c.e,c.d,c.p,c.q,c.dp,c.dq,c.co),d}if("2a8648ce3d0201"==b.algoid){if(this.parsePrivateRawECKeyHexAtObj(a,b),void 0===KJUR.crypto.OID.oidhex2name[b.algparam])throw"KJUR.crypto.OID.oidhex2name undefined: "+b.algparam;var e=KJUR.crypto.OID.oidhex2name[b.algparam],d=new KJUR.crypto.ECDSA({curve:e});return d.setPublicKeyHex(b.pubkey),d.setPrivateKeyHex(b.key),d.isPublic=!1,d}if("2a8648ce380401"==b.algoid){var f=ASN1HEX.getVbyList(a,0,[1,1,0],"02"),g=ASN1HEX.getVbyList(a,0,[1,1,1],"02"),h=ASN1HEX.getVbyList(a,0,[1,1,2],"02"),i=ASN1HEX.getVbyList(a,0,[2,0],"02"),j=new BigInteger(f,16),k=new BigInteger(g,16),l=new BigInteger(h,16),m=new BigInteger(i,16),d=new KJUR.crypto.DSA;return d.setPrivate(j,k,l,null,m),d}throw"unsupported private key algorithm"},getRSAKeyFromPublicPKCS8PEM:function(a){var b=this.getHexFromPEM(a,"PUBLIC KEY"),c=this.getRSAKeyFromPublicPKCS8Hex(b);return c},getKeyFromPublicPKCS8PEM:function(a){var b=this.getHexFromPEM(a,"PUBLIC KEY"),c=this.getKeyFromPublicPKCS8Hex(b);return c},getKeyFromPublicPKCS8Hex:function(a){var b=this.parsePublicPKCS8Hex(a);if("2a864886f70d010101"==b.algoid){var c=this.parsePublicRawRSAKeyHex(b.key),d=new RSAKey;return d.setPublic(c.n,c.e),d}if("2a8648ce3d0201"==b.algoid){if(void 0===KJUR.crypto.OID.oidhex2name[b.algparam])throw"KJUR.crypto.OID.oidhex2name undefined: "+b.algparam;var e=KJUR.crypto.OID.oidhex2name[b.algparam],d=new KJUR.crypto.ECDSA({curve:e,pub:b.key});return d}if("2a8648ce380401"==b.algoid){var f=b.algparam,g=ASN1HEX.getHexOfV_AtObj(b.key,0),d=new KJUR.crypto.DSA;return d.setPublic(new BigInteger(f.p,16),new BigInteger(f.q,16),new BigInteger(f.g,16),new BigInteger(g,16)),d}throw"unsupported public key algorithm"},parsePublicRawRSAKeyHex:function(a){var b={};if("30"!=a.substr(0,2))throw"malformed RSA key(code:001)";var c=ASN1HEX.getPosArrayOfChildren_AtObj(a,0);if(2!=c.length)throw"malformed RSA key(code:002)";if("02"!=a.substr(c[0],2))throw"malformed RSA key(code:003)";if(b.n=ASN1HEX.getHexOfV_AtObj(a,c[0]),"02"!=a.substr(c[1],2))throw"malformed RSA key(code:004)";return b.e=ASN1HEX.getHexOfV_AtObj(a,c[1]),b},parsePrivateRawRSAKeyHexAtObj:function(a,b){var c=b.keyidx;if("30"!=a.substr(c,2))throw"malformed RSA private key(code:001)";var d=ASN1HEX.getPosArrayOfChildren_AtObj(a,c);if(9!=d.length)throw"malformed RSA private key(code:002)";b.key={},b.key.n=ASN1HEX.getHexOfV_AtObj(a,d[1]),b.key.e=ASN1HEX.getHexOfV_AtObj(a,d[2]),b.key.d=ASN1HEX.getHexOfV_AtObj(a,d[3]),b.key.p=ASN1HEX.getHexOfV_AtObj(a,d[4]),b.key.q=ASN1HEX.getHexOfV_AtObj(a,d[5]),b.key.dp=ASN1HEX.getHexOfV_AtObj(a,d[6]),b.key.dq=ASN1HEX.getHexOfV_AtObj(a,d[7]),b.key.co=ASN1HEX.getHexOfV_AtObj(a,d[8])},parsePrivateRawECKeyHexAtObj:function(a,b){var c=b.keyidx,d=ASN1HEX.getVbyList(a,c,[1],"04"),e=ASN1HEX.getVbyList(a,c,[2,0],"03").substr(2);b.key=d,b.pubkey=e},parsePublicPKCS8Hex:function(a){var b={};b.algparam=null;var c=ASN1HEX.getPosArrayOfChildren_AtObj(a,0);if(2!=c.length)throw"outer DERSequence shall have 2 elements: "+c.length;var d=c[0];if("30"!=a.substr(d,2))throw"malformed PKCS8 public key(code:001)";var e=ASN1HEX.getPosArrayOfChildren_AtObj(a,d);if(2!=e.length)throw"malformed PKCS8 public key(code:002)";if("06"!=a.substr(e[0],2))throw"malformed PKCS8 public key(code:003)";if(b.algoid=ASN1HEX.getHexOfV_AtObj(a,e[0]),"06"==a.substr(e[1],2)?b.algparam=ASN1HEX.getHexOfV_AtObj(a,e[1]):"30"==a.substr(e[1],2)&&(b.algparam={},b.algparam.p=ASN1HEX.getVbyList(a,e[1],[0],"02"),b.algparam.q=ASN1HEX.getVbyList(a,e[1],[1],"02"),b.algparam.g=ASN1HEX.getVbyList(a,e[1],[2],"02")),"03"!=a.substr(c[1],2))throw"malformed PKCS8 public key(code:004)";return b.key=ASN1HEX.getHexOfV_AtObj(a,c[1]).substr(2),b},getRSAKeyFromPublicPKCS8Hex:function(a){var b=ASN1HEX.getPosArrayOfChildren_AtObj(a,0);if(2!=b.length)throw"outer DERSequence shall have 2 elements: "+b.length;var c=ASN1HEX.getHexOfTLV_AtObj(a,b[0]);if("300d06092a864886f70d0101010500"!=c)throw"PKCS8 AlgorithmId is not rsaEncryption";if("03"!=a.substr(b[1],2))throw"PKCS8 Public Key is not BITSTRING encapslated.";var d=ASN1HEX.getStartPosOfV_AtObj(a,b[1])+2;if("30"!=a.substr(d,2))throw"PKCS8 Public Key is not SEQUENCE.";var e=ASN1HEX.getPosArrayOfChildren_AtObj(a,d);if(2!=e.length)throw"inner DERSequence shall have 2 elements: "+e.length;if("02"!=a.substr(e[0],2))throw"N is not ASN.1 INTEGER";if("02"!=a.substr(e[1],2))throw"E is not ASN.1 INTEGER";var f=ASN1HEX.getHexOfV_AtObj(a,e[0]),g=ASN1HEX.getHexOfV_AtObj(a,e[1]),h=new RSAKey;return h.setPublic(f,g),h}}}();KEYUTIL.getKey=function(a,b,c){if("undefined"!=typeof RSAKey&&a instanceof RSAKey)return a;if("undefined"!=typeof KJUR.crypto.ECDSA&&a instanceof KJUR.crypto.ECDSA)return a;if("undefined"!=typeof KJUR.crypto.DSA&&a instanceof KJUR.crypto.DSA)return a;if(void 0!==a.curve&&void 0!==a.xy&&void 0===a.d)return new KJUR.crypto.ECDSA({pub:a.xy,curve:a.curve});if(void 0!==a.curve&&void 0!==a.d)return new KJUR.crypto.ECDSA({prv:a.d,curve:a.curve});if(void 0===a.kty&&void 0!==a.n&&void 0!==a.e&&void 0===a.d){var d=new RSAKey;return d.setPublic(a.n,a.e),d}if(void 0===a.kty&&void 0!==a.n&&void 0!==a.e&&void 0!==a.d&&void 0!==a.p&&void 0!==a.q&&void 0!==a.dp&&void 0!==a.dq&&void 0!==a.co&&void 0===a.qi){var d=new RSAKey;return d.setPrivateEx(a.n,a.e,a.d,a.p,a.q,a.dp,a.dq,a.co),d}if(void 0===a.kty&&void 0!==a.n&&void 0!==a.e&&void 0!==a.d&&void 0===a.p){var d=new RSAKey;return d.setPrivate(a.n,a.e,a.d),d}if(void 0!==a.p&&void 0!==a.q&&void 0!==a.g&&void 0!==a.y&&void 0===a.x){var d=new KJUR.crypto.DSA;return d.setPublic(a.p,a.q,a.g,a.y),d}if(void 0!==a.p&&void 0!==a.q&&void 0!==a.g&&void 0!==a.y&&void 0!==a.x){var d=new KJUR.crypto.DSA;return d.setPrivate(a.p,a.q,a.g,a.y,a.x),d}if("RSA"===a.kty&&void 0!==a.n&&void 0!==a.e&&void 0===a.d){var d=new RSAKey;return d.setPublic(b64utohex(a.n),b64utohex(a.e)),d}if("RSA"===a.kty&&void 0!==a.n&&void 0!==a.e&&void 0!==a.d&&void 0!==a.p&&void 0!==a.q&&void 0!==a.dp&&void 0!==a.dq&&void 0!==a.qi){var d=new RSAKey;return d.setPrivateEx(b64utohex(a.n),b64utohex(a.e),b64utohex(a.d),b64utohex(a.p),b64utohex(a.q),b64utohex(a.dp),b64utohex(a.dq),b64utohex(a.qi)),d}if("RSA"===a.kty&&void 0!==a.n&&void 0!==a.e&&void 0!==a.d){var d=new RSAKey;return d.setPrivate(b64utohex(a.n),b64utohex(a.e),b64utohex(a.d)),d}if("EC"===a.kty&&void 0!==a.crv&&void 0!==a.x&&void 0!==a.y&&void 0===a.d){var e=new KJUR.crypto.ECDSA({curve:a.crv}),f=e.ecparams.keylen/4,g=("0000000000"+b64utohex(a.x)).slice(-f),h=("0000000000"+b64utohex(a.y)).slice(-f),i="04"+g+h;return e.setPublicKeyHex(i),e}if("EC"===a.kty&&void 0!==a.crv&&void 0!==a.x&&void 0!==a.y&&void 0!==a.d){var e=new KJUR.crypto.ECDSA({curve:a.crv}),f=e.ecparams.keylen/4,g=("0000000000"+b64utohex(a.x)).slice(-f),h=("0000000000"+b64utohex(a.y)).slice(-f),i="04"+g+h,j=("0000000000"+b64utohex(a.d)).slice(-f);return e.setPublicKeyHex(i),e.setPrivateKeyHex(j),e}if(a.indexOf("-END CERTIFICATE-",0)!=-1||a.indexOf("-END X509 CERTIFICATE-",0)!=-1||a.indexOf("-END TRUSTED CERTIFICATE-",0)!=-1)return X509.getPublicKeyFromCertPEM(a);if("pkcs8pub"===c)return KEYUTIL.getKeyFromPublicPKCS8Hex(a);if(a.indexOf("-END PUBLIC KEY-")!=-1)return KEYUTIL.getKeyFromPublicPKCS8PEM(a);if("pkcs5prv"===c){var d=new RSAKey;return d.readPrivateKeyFromASN1HexString(a),d}if("pkcs5prv"===c){var d=new RSAKey;return d.readPrivateKeyFromASN1HexString(a),d}if(a.indexOf("-END RSA PRIVATE KEY-")!=-1&&a.indexOf("4,ENCRYPTED")==-1){var k=KEYUTIL.getHexFromPEM(a,"RSA PRIVATE KEY");return KEYUTIL.getKey(k,null,"pkcs5prv")}if(a.indexOf("-END DSA PRIVATE KEY-")!=-1&&a.indexOf("4,ENCRYPTED")==-1){var l=this.getHexFromPEM(a,"DSA PRIVATE KEY"),m=ASN1HEX.getVbyList(l,0,[1],"02"),n=ASN1HEX.getVbyList(l,0,[2],"02"),o=ASN1HEX.getVbyList(l,0,[3],"02"),p=ASN1HEX.getVbyList(l,0,[4],"02"),q=ASN1HEX.getVbyList(l,0,[5],"02"),d=new KJUR.crypto.DSA;return d.setPrivate(new BigInteger(m,16),new BigInteger(n,16),new BigInteger(o,16),new BigInteger(p,16),new BigInteger(q,16)),d}if(a.indexOf("-END PRIVATE KEY-")!=-1)return KEYUTIL.getKeyFromPlainPrivatePKCS8PEM(a);if(a.indexOf("-END RSA PRIVATE KEY-")!=-1&&a.indexOf("4,ENCRYPTED")!=-1)return KEYUTIL.getRSAKeyFromEncryptedPKCS5PEM(a,b);if(a.indexOf("-END EC PRIVATE KEY-")!=-1&&a.indexOf("4,ENCRYPTED")!=-1){var l=KEYUTIL.getDecryptedKeyHex(a,b),d=ASN1HEX.getVbyList(l,0,[1],"04"),r=ASN1HEX.getVbyList(l,0,[2,0],"06"),s=ASN1HEX.getVbyList(l,0,[3,0],"03").substr(2),t="";if(void 0===KJUR.crypto.OID.oidhex2name[r])throw"undefined OID(hex) in KJUR.crypto.OID: "+r;t=KJUR.crypto.OID.oidhex2name[r];var e=new KJUR.crypto.ECDSA({name:t});return e.setPublicKeyHex(s),e.setPrivateKeyHex(d),e.isPublic=!1,e}if(a.indexOf("-END DSA PRIVATE KEY-")!=-1&&a.indexOf("4,ENCRYPTED")!=-1){var l=KEYUTIL.getDecryptedKeyHex(a,b),m=ASN1HEX.getVbyList(l,0,[1],"02"),n=ASN1HEX.getVbyList(l,0,[2],"02"),o=ASN1HEX.getVbyList(l,0,[3],"02"),p=ASN1HEX.getVbyList(l,0,[4],"02"),q=ASN1HEX.getVbyList(l,0,[5],"02"),d=new KJUR.crypto.DSA;return d.setPrivate(new BigInteger(m,16),new BigInteger(n,16),new BigInteger(o,16),new BigInteger(p,16),new BigInteger(q,16)),d}if(a.indexOf("-END ENCRYPTED PRIVATE KEY-")!=-1)return KEYUTIL.getKeyFromEncryptedPKCS8PEM(a,b);throw"not supported argument"},KEYUTIL.generateKeypair=function(a,b){if("RSA"==a){var c=b,d=new RSAKey;d.generate(c,"10001"),d.isPrivate=!0,d.isPublic=!0;var e=new RSAKey,f=d.n.toString(16),g=d.e.toString(16);e.setPublic(f,g),e.isPrivate=!1,e.isPublic=!0;var h={};return h.prvKeyObj=d,h.pubKeyObj=e,h}if("EC"==a){var i=b,j=new KJUR.crypto.ECDSA({curve:i}),k=j.generateKeyPairHex(),d=new KJUR.crypto.ECDSA({curve:i});d.setPublicKeyHex(k.ecpubhex),d.setPrivateKeyHex(k.ecprvhex),d.isPrivate=!0,d.isPublic=!1;var e=new KJUR.crypto.ECDSA({curve:i});e.setPublicKeyHex(k.ecpubhex),e.isPrivate=!1,e.isPublic=!0;var h={};return h.prvKeyObj=d,h.pubKeyObj=e,h}throw"unknown algorithm: "+a},KEYUTIL.getPEM=function(a,b,c,d,e){function h(a){var b=KJUR.asn1.ASN1Util.newObject({seq:[{int:0},{int:{bigint:a.n}},{int:a.e},{int:{bigint:a.d}},{int:{bigint:a.p}},{int:{bigint:a.q}},{int:{bigint:a.dmp1}},{int:{bigint:a.dmq1}},{int:{bigint:a.coeff}}]});return b}function i(a){var b=KJUR.asn1.ASN1Util.newObject({seq:[{int:1},{octstr:{hex:a.prvKeyHex}},{tag:["a0",!0,{oid:{name:a.curveName}}]},{tag:["a1",!0,{bitstr:{hex:"00"+a.pubKeyHex}}]}]});return b}function j(a){var b=KJUR.asn1.ASN1Util.newObject({seq:[{int:0},{int:{bigint:a.p}},{int:{bigint:a.q}},{int:{bigint:a.g}},{int:{bigint:a.y}},{int:{bigint:a.x}}]});return b}var f=KJUR.asn1,g=KJUR.crypto;if(("undefined"!=typeof RSAKey&&a instanceof RSAKey||"undefined"!=typeof g.DSA&&a instanceof g.DSA||"undefined"!=typeof g.ECDSA&&a instanceof g.ECDSA)&&1==a.isPublic&&(void 0===b||"PKCS8PUB"==b)){var k=new KJUR.asn1.x509.SubjectPublicKeyInfo(a),l=k.getEncodedHex();return f.ASN1Util.getPEMStringFromHex(l,"PUBLIC KEY")}if("PKCS1PRV"==b&&"undefined"!=typeof RSAKey&&a instanceof RSAKey&&(void 0===c||null==c)&&1==a.isPrivate){var k=h(a),l=k.getEncodedHex();return f.ASN1Util.getPEMStringFromHex(l,"RSA PRIVATE KEY")}if("PKCS1PRV"==b&&"undefined"!=typeof RSAKey&&a instanceof KJUR.crypto.ECDSA&&(void 0===c||null==c)&&1==a.isPrivate){var m=new KJUR.asn1.DERObjectIdentifier({name:a.curveName}),n=m.getEncodedHex(),o=i(a),p=o.getEncodedHex(),q="";return q+=f.ASN1Util.getPEMStringFromHex(n,"EC PARAMETERS"),q+=f.ASN1Util.getPEMStringFromHex(p,"EC PRIVATE KEY")}if("PKCS1PRV"==b&&"undefined"!=typeof KJUR.crypto.DSA&&a instanceof KJUR.crypto.DSA&&(void 0===c||null==c)&&1==a.isPrivate){var k=j(a),l=k.getEncodedHex();return f.ASN1Util.getPEMStringFromHex(l,"DSA PRIVATE KEY")}if("PKCS5PRV"==b&&"undefined"!=typeof RSAKey&&a instanceof RSAKey&&void 0!==c&&null!=c&&1==a.isPrivate){var k=h(a),l=k.getEncodedHex();return void 0===d&&(d="DES-EDE3-CBC"),this.getEncryptedPKCS5PEMFromPrvKeyHex("RSA",l,c,d)}if("PKCS5PRV"==b&&"undefined"!=typeof KJUR.crypto.ECDSA&&a instanceof KJUR.crypto.ECDSA&&void 0!==c&&null!=c&&1==a.isPrivate){var k=i(a),l=k.getEncodedHex();return void 0===d&&(d="DES-EDE3-CBC"),this.getEncryptedPKCS5PEMFromPrvKeyHex("EC",l,c,d)}if("PKCS5PRV"==b&&"undefined"!=typeof KJUR.crypto.DSA&&a instanceof KJUR.crypto.DSA&&void 0!==c&&null!=c&&1==a.isPrivate){var k=j(a),l=k.getEncodedHex();return void 0===d&&(d="DES-EDE3-CBC"),this.getEncryptedPKCS5PEMFromPrvKeyHex("DSA",l,c,d)}var r=function(a,b){var c=s(a,b),d=new KJUR.asn1.ASN1Util.newObject({seq:[{seq:[{oid:{name:"pkcs5PBES2"}},{seq:[{seq:[{oid:{name:"pkcs5PBKDF2"}},{seq:[{octstr:{hex:c.pbkdf2Salt}},{int:c.pbkdf2Iter}]}]},{seq:[{oid:{name:"des-EDE3-CBC"}},{octstr:{hex:c.encryptionSchemeIV}}]}]}]},{octstr:{hex:c.ciphertext}}]});return d.getEncodedHex()},s=function(a,b){var c=100,d=CryptoJS.lib.WordArray.random(8),e="DES-EDE3-CBC",f=CryptoJS.lib.WordArray.random(8),g=CryptoJS.PBKDF2(b,d,{keySize:6,iterations:c}),h=CryptoJS.enc.Hex.parse(a),i=CryptoJS.TripleDES.encrypt(h,g,{iv:f})+"",j={};return j.ciphertext=i,j.pbkdf2Salt=CryptoJS.enc.Hex.stringify(d),j.pbkdf2Iter=c,j.encryptionSchemeAlg=e,j.encryptionSchemeIV=CryptoJS.enc.Hex.stringify(f),j};if("PKCS8PRV"==b&&"undefined"!=typeof RSAKey&&a instanceof RSAKey&&1==a.isPrivate){var t=h(a),u=t.getEncodedHex(),k=KJUR.asn1.ASN1Util.newObject({seq:[{int:0},{seq:[{oid:{name:"rsaEncryption"}},{null:!0}]},{octstr:{hex:u}}]}),l=k.getEncodedHex();if(void 0===c||null==c)return f.ASN1Util.getPEMStringFromHex(l,"PRIVATE KEY");var p=r(l,c);return f.ASN1Util.getPEMStringFromHex(p,"ENCRYPTED PRIVATE KEY")}if("PKCS8PRV"==b&&"undefined"!=typeof KJUR.crypto.ECDSA&&a instanceof KJUR.crypto.ECDSA&&1==a.isPrivate){var t=new KJUR.asn1.ASN1Util.newObject({seq:[{int:1},{octstr:{hex:a.prvKeyHex}},{tag:["a1",!0,{bitstr:{hex:"00"+a.pubKeyHex}}]}]}),u=t.getEncodedHex(),k=KJUR.asn1.ASN1Util.newObject({seq:[{int:0},{seq:[{oid:{name:"ecPublicKey"}},{oid:{name:a.curveName}}]},{octstr:{hex:u}}]}),l=k.getEncodedHex();if(void 0===c||null==c)return f.ASN1Util.getPEMStringFromHex(l,"PRIVATE KEY");var p=r(l,c);return f.ASN1Util.getPEMStringFromHex(p,"ENCRYPTED PRIVATE KEY")}if("PKCS8PRV"==b&&"undefined"!=typeof KJUR.crypto.DSA&&a instanceof KJUR.crypto.DSA&&1==a.isPrivate){var t=new KJUR.asn1.DERInteger({bigint:a.x}),u=t.getEncodedHex(),k=KJUR.asn1.ASN1Util.newObject({seq:[{int:0},{seq:[{oid:{name:"dsa"}},{seq:[{int:{bigint:a.p}},{int:{bigint:a.q}},{int:{bigint:a.g}}]}]},{octstr:{hex:u}}]}),l=k.getEncodedHex();if(void 0===c||null==c)return f.ASN1Util.getPEMStringFromHex(l,"PRIVATE KEY");var p=r(l,c);return f.ASN1Util.getPEMStringFromHex(p,"ENCRYPTED PRIVATE KEY")}throw"unsupported object nor format"},KEYUTIL.getKeyFromCSRPEM=function(a){var b=KEYUTIL.getHexFromPEM(a,"CERTIFICATE REQUEST"),c=KEYUTIL.getKeyFromCSRHex(b);return c},KEYUTIL.getKeyFromCSRHex=function(a){var b=KEYUTIL.parseCSRHex(a),c=KEYUTIL.getKey(b.p8pubkeyhex,null,"pkcs8pub");return c},KEYUTIL.parseCSRHex=function(a){var b={},c=a;if("30"!=c.substr(0,2))throw"malformed CSR(code:001)";var d=ASN1HEX.getPosArrayOfChildren_AtObj(c,0);if(d.length<1)throw"malformed CSR(code:002)";if("30"!=c.substr(d[0],2))throw"malformed CSR(code:003)";var e=ASN1HEX.getPosArrayOfChildren_AtObj(c,d[0]);if(e.length<3)throw"malformed CSR(code:004)";return b.p8pubkeyhex=ASN1HEX.getHexOfTLV_AtObj(c,e[2]),b},KEYUTIL.getJWKFromKey=function(a){var b={};if(a instanceof RSAKey&&a.isPrivate)return b.kty="RSA",b.n=hextob64u(a.n.toString(16)),b.e=hextob64u(a.e.toString(16)),b.d=hextob64u(a.d.toString(16)),b.p=hextob64u(a.p.toString(16)),b.q=hextob64u(a.q.toString(16)),b.dp=hextob64u(a.dmp1.toString(16)),b.dq=hextob64u(a.dmq1.toString(16)),b.qi=hextob64u(a.coeff.toString(16)),b;if(a instanceof RSAKey&&a.isPublic)return b.kty="RSA",b.n=hextob64u(a.n.toString(16)),b.e=hextob64u(a.e.toString(16)),b;if(a instanceof KJUR.crypto.ECDSA&&a.isPrivate){var c=a.getShortNISTPCurveName();if("P-256"!==c&&"P-384"!==c)throw"unsupported curve name for JWT: "+c;var d=a.getPublicKeyXYHex();return b.kty="EC",b.crv=c,b.x=hextob64u(d.x),b.y=hextob64u(d.y),b.d=hextob64u(a.prvKeyHex),b}if(a instanceof KJUR.crypto.ECDSA&&a.isPublic){var c=a.getShortNISTPCurveName();if("P-256"!==c&&"P-384"!==c)throw"unsupported curve name for JWT: "+c;var d=a.getPublicKeyXYHex();return b.kty="EC",b.crv=c,b.x=hextob64u(d.x),b.y=hextob64u(d.y),b}throw"not supported key object"};

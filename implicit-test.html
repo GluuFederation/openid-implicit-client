@@ -1,18 +1,22 @@
-<HTML>
+<!-- Include Bootstrap from a CDN (Content Delivery Network) -->
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+<!DOCTYPE html>
+<html lang="en">
     <HEAD>
         <script src="./openidconnect.js">
         </script>
 
         <script>
             var clientInfo = {
-                client_id : '(your-client-id)',
-                redirect_uri : 'https://(hostname)/login-callback.html'
+                client_id : '@!87B2.799A.2DD5.2A83!0001!0C26.B6FD!0008!EDAA.E9FD',
+                redirect_uri : 'https://pkg-deb2.gluu.org/identity/openid-implicit-client/login-callback.html'
             };
             OIDC.setClientInfo( clientInfo );
-            var providerInfo = OIDC.discover('https://albacore.gluu.info');
+            var providerInfo = OIDC.discover('https://pkg-deb2.gluu.org');
             OIDC.setProviderInfo( providerInfo );
             OIDC.storeInfo(providerInfo, clientInfo);
-
             // Remove State and Nonce from previous session
             sessionStorage.removeItem('state');
             sessionStorage.removeItem('nonce');
@@ -21,15 +25,15 @@
     </HEAD>
 
     <BODY>
-
+      <div class="container">
         <h1>Implicit Flow Test Login Page</h1>
 
         Click button to login! &nbsp; &nbsp;
 
-<button onClick="OIDC.login( {scope : 'openid profile email',
-                              response_type : 'token id_token'} );"
-        class="float-left submit-button" >Authenticate</button>
-
+        <button onClick="OIDC.login( {scope : 'openid profile email',
+                                  response_type : 'token id_token'} );"
+        type="button" class="btn btn-success" >Authenticate</button>
+      </div>
     </BODY>
 
 </HTML>
