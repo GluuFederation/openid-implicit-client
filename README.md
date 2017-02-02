@@ -24,7 +24,7 @@ List of the Identity Provider's configuration parameters. <br>
 
 * **supportedProviderOptions.issuer** *(string)*: Issuer ID <br>
 * **supportedProviderOptions.authorization_endpoint** *(string)*: Authorization Endpoint URL <br>
-* **supportedProviderOptions.jwks_uri** *(string)*: JWKS URL <br>
+* **supportedProviderOptions.jwks_uri** *(string)*: JWKS URI <br>
 * **supportedProviderOptions.claims_parameter_supported** *(boolean)*: Claims parameter support <br>
 * **supportedProviderOptions.request_parameter_supported** *(boolean)*: Request parameter support <br>
 * **supportedProviderOptions.jwks** *(object)*: Identity Provider's JWK Set <br>
@@ -40,7 +40,7 @@ Supported Login Request parameters. <br>
 * **supportedRequestOptions.claims** *(object)*: Claims object containing what information to return in the UserInfo endpoint and ID Token<br>
 * **supportedRequestOptions.claims.id_token** *(array)*: List of claims to return in the ID Token<br>
 * **supportedRequestOptions.claims.userinfo** *(array)*: List of claims to return in the UserInfo endpoint<br>
-* **supportedRequestOptions.request** *(boolean)*: Signed request object JWS. Not supported yet.<br>
+* **supportedRequestOptions.request** *(boolean)*: Signed request object JWS. **Not supported yet.**<br>
 
 #### Supported Client Options
 
@@ -54,25 +54,25 @@ List of supported Client configuration parameters. <br>
 #### setProviderInfo(p)
 * _p - The Identity Provider's configuration options described in OIDC.supportedProviderOptions_ <br>
 
-Sets the Identity Provider's configuration parameters. It may be done declaring each parameter on code or using the returning information from OIDC.discover('https://op.example.com'). Returns a boolean value indicating the status of **(check what it would be returned)** <br>
+Sets the Identity Provider's configuration parameters. It may be done declaring each parameter on code or using the returning information from OIDC.discover('https:<nolink>//(hostname)'). It returns a boolean value indicating the success or failure of the operation. <br>
 
 ###### Example:
     // set Identity Provider configuration
     OIDC.setProviderInfo( {
-        issuer: 'https:/op.example.com',
-        authorization_endpoint: 'http://op.example.com/auth.html',
-        jwks_uri: 'https://op.example.com/jwks'
+        issuer: 'https://(hostname)',
+        authorization_endpoint: 'http://(hostname)/auth.html',
+        jwks_uri: 'https://(hostname)/jwks'
         });
 
     // set Identity Provider configuration using discovery information
-    var discovery = OIDC.discover('https://op.example.com');
+    var discovery = OIDC.discover('https://(hostname)');
     if(var)
       OIDC.setProviderInfo(discovery);
 
 #### setClientInfo(p)
-* _p - The Client's configuration options described in OIDC.supportedClientOptions_ <br>
+* _p - The Client's configuration options described in [OIDC.supportedClientOptions](# Supported Client Options)_ <br>
 
-Sets the Client's configuration parameters.
+Sets the Client's configuration parameters. It returns a boolean value indicating the success or failure of the operation.
 
 ###### Example:
     // set client_id and redirect_uri
@@ -140,15 +140,15 @@ Verifies the JWS string using the JWK.
 
 #### getValidIdToken()
 
-Get the ID Token from the current page URL whose signature is verified and contents validated against the configuration data set via *OIDC.setProviderInfo* and *OIDC.setClientInfo*.
+Return the ID Token from the current page URL whose signature is verified and contents validated against the configuration data set via *OIDC.setProviderInfo* and *OIDC.setClientInfo*.
 
 #### getAccessToken()
 
-Get Access Token from the current page URL.
+Return Access Token from the current page URL.
 
 #### getCode()
 
-Get Authorization Code from the current page URL.
+Return Authorization Code from the current page URL.
 
 #### getIdTokenParts(id_token)
 * *id_token - The ID Token string* <br>
@@ -158,12 +158,12 @@ Splits the ID Token string into the individual JWS parts.
 #### getIdTokenPayload(id_token)
 * *id_token - The ID Token string* <br>
 
-Get the contents of the ID Token payload as an JSON object.
+Return the contents of the ID Token payload as an JSON object.
 
 #### getJsonObject(jsonS)
 * *jsonS - JSON string* <br>
 
-Get the JSON object from the JSON string
+Return the JSON object from the JSON string
 
 #### fetchJSON(url)
 * *url - URL to fetch the JSON file* <br>
