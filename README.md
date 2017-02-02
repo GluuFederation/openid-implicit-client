@@ -54,7 +54,7 @@ List of supported Client configuration parameters. <br>
 #### setProviderInfo(p)
 * _p - The Identity Provider's configuration options described in [OIDC.supportedProviderOptions](#supported-provider-options)_ <br>
 
-Sets the Identity Provider's configuration parameters. It may be done declaring each parameter on code or using the returning information from [OIDC.discover('https:<nolink>//(hostname)')](#discover(issuer). It returns a boolean value indicating status of call. <br>
+Sets the Identity Provider's configuration parameters. It may be done declaring each parameter on code or using the returning information from [OIDC.discover('https:<nolink>//(hostname)')](#discoverissuer). It returns a boolean value indicating status of call. <br>
 
 ###### Example:
     // set Identity Provider configuration
@@ -130,7 +130,7 @@ Verifies the ID Token signature using the JWK Keyset from jwks or jwks_uri of th
 #### isValidIdToken(id_token)
 * *id_token - The ID Token string* <br>
 
-Validates the information in the ID Token against configuration data in the Identity Provider and Client configuration set via *[OIDC.setProviderInfo](#supported-provider-options)* and set via *[OIDC.setClientInfo](#supported-client-options)*. It returns a boolean value indicating the validity of the ID Token.
+Validates the information in the ID Token against configuration data in the Identity Provider and Client configuration set via *[OIDC.setProviderInfo](#setproviderinfop)* and set via *[OIDC.setClientInfo](#setclientinfop)*. It returns a boolean value indicating the validity of the ID Token.
 
 #### rsaVerifyJWS(jws, jwk)
 * *jws - The JWS string* <br>
@@ -140,7 +140,7 @@ Verifies the JWS string using the JWK. It returns a boolean value indicating the
 
 #### getValidIdToken()
 
-Return the ID Token string taken from the current page URL whose signature is verified and contents validated against the configuration data set via *[OIDC.setProviderInfo](#supported-provider-options)* and *[OIDC.setClientInfo](#supported-client-options)*.
+Return the ID Token string taken from the current page URL whose signature is verified and contents validated against the configuration data set via *[OIDC.setProviderInfo](#setproviderinfop)* and *[OIDC.setClientInfo](#setclientinfop)*.
 
 #### getAccessToken()
 
