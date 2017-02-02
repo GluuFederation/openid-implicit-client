@@ -19,10 +19,8 @@
             var userInfoClaimsHTMLString = getHTMLTableFromJSONObj(userInfoClaims);
 
             function print_id_token(){
-                button = '<br><button type="button" class="btn btn-danger" >Logout</button>';
                 document.getElementById("id_token").innerHTML = '<b>Id_token</b>' + tokenClaimsHTMLString +
-                                                                '\n<b>User Info</b>' + userInfoClaimsHTMLString
-                                                                + button;
+                                                                '\n<b>User Info</b>' + userInfoClaimsHTMLString;
             }
         </script>
     </HEAD>
