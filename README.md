@@ -182,3 +182,14 @@ Retrieve the JWK key that matches the input criteria. It returns an array of JWK
 * *issuer - The Identity Provider's issuer_id* <br>
 
 Performs discovery on the Identity Provider's issuer_id. It returns the JSON object of the discovery document or null.
+
+#### debug(toggle, id_token)
+* *toggle - Boolean value that enables or disables debugging output* <br>
+* *id_token - The ID Token string* <br>
+
+Print current Client's configuration options, Identity Provider's configuration options, results for verification and validation of id_token and its signature directly on console.
+
+#### getUserInfo(access_token)
+* *access_token - Access Token string* <br>
+
+Make the call to UserInfo endpoint with access token. It returns the user claims sent by the Identity Provider.
