@@ -125,7 +125,7 @@ Redirect to the Identity Provider for authentication.
 #### verifyIdTokenSig(id_token)
 * *id_token - The ID Token string* <br>
 
-Verifies the ID Token signature using the JWK Keyset from jwks or jwks_uri of the Identity Provider Configuration options set via *[OIDC.setProviderInfo](#supported-provider-options)*. Supports only RSA signatures. It returns a boolean value indicates whether the signature is valid or not.
+Verifies the ID Token signature using the JWK Keyset from jwks or jwks_uri of the Identity Provider Configuration options set via *[OIDC.setProviderInfo](#setproviderinfo(p))*. Supports only RSA signatures. It returns a boolean value indicates whether the signature is valid or not.
 
 #### isValidIdToken(id_token)
 * *id_token - The ID Token string* <br>
