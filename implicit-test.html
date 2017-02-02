@@ -14,7 +14,7 @@
                 redirect_uri : 'https://(hostname)/login-callback.html'
             };
             OIDC.setClientInfo( clientInfo );
-            var providerInfo = OIDC.discover('https://(hostname)');
+            var providerInfo = OIDC.discover('https://(providername)');
             OIDC.setProviderInfo( providerInfo );
             OIDC.storeInfo(providerInfo, clientInfo);
             // Remove State and Nonce from previous session
