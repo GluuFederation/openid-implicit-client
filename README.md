@@ -102,7 +102,7 @@ Check whether the required configuration parameters are set. It returns a boolea
 Clears the Identity Provider configuration parameters.
 
 #### login(reqOptions)
-* _reqOptions - Optional authentication request options [(OIDC.supportedRequestOptions)](#supported-request-options)_ <br>
+* _reqOptions - Optional authentication request options ([OIDC.supportedRequestOptions](#supported-request-options))_ <br>
 
 Redirect to the Identity Provider for authentication.
 
