@@ -827,7 +827,6 @@ OIDC.getJsonObject = function (jsonS)
       throw new OidcException('Unable to get the JSON object from JSON string: ' + e.toString());
       return null;
     }
-//    return JSON.parse(jsonS);
 };
 
 
@@ -950,9 +949,8 @@ OIDC.discover = function(issuer)
 OIDC.getUserInfo = function(access_token)
 {
   try {
-      var currentURL = window.location.href;
-      var providerURL = currentURL.match('https://([^/]*)')
-      var providerInfo = OIDC.discover(providerURL[0]);
+      var providerURL = JSON.parse(sessionStorage['providerInfo'])['issuer']
+      var providerInfo = OIDC.discover(providerURL);
       var request = new XMLHttpRequest();
       request.open('POST', providerInfo['userinfo_endpoint'], false);
       request.setRequestHeader("authorization", "Bearer " + access_token);
