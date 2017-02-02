@@ -18,7 +18,7 @@ so that you can put it into the cookie to handle the session.
 
 ## OIDC Variables
 
-### Supported Provider Options
+#### Supported Provider Options
 
 List of the Identity Provider's configuration parameters. <br>
 
@@ -29,7 +29,7 @@ List of the Identity Provider's configuration parameters. <br>
 * **supportedProviderOptions.request_parameter_supported** *(boolean)*: Request parameter support <br>
 * **supportedProviderOptions.jwks** *(object)*: Identity Provider's JWK Set <br>
 
-### Supported Request Options
+#### Supported Request Options
 
 Supported Login Request parameters. <br>
 
@@ -42,7 +42,7 @@ Supported Login Request parameters. <br>
 * **supportedRequestOptions.claims.userinfo** *(array)*: List of claims to return in the UserInfo endpoint<br>
 * **supportedRequestOptions.request** *(boolean)*: Signed request object JWS. Not supported yet.<br>
 
-### Supported Client Options
+#### Supported Client Options
 
 List of supported Client configuration parameters. <br>
 
@@ -51,7 +51,7 @@ List of supported Client configuration parameters. <br>
 
 ## OIDC Methods
 
-### setProviderInfo(p)
+#### setProviderInfo(p)
 * _p - The Identity Provider's configuration options described in OIDC.supportedProviderOptions_ <br>
 
 Sets the Identity Provider's configuration parameters. It may be done declaring each parameter on code or using the returning information from OIDC.discover('https://op.example.com'). Returns a boolean value indicating the status of **(check what it would be returned)** <br>
@@ -69,7 +69,7 @@ Sets the Identity Provider's configuration parameters. It may be done declaring 
     if(var)
       OIDC.setProviderInfo(discovery);
 
-### setClientInfo(p)
+#### setClientInfo(p)
 * _p - The Client's configuration options described in OIDC.supportedClientOptions_ <br>
 
 Sets the Client's configuration parameters.
@@ -82,26 +82,26 @@ Sets the Client's configuration parameters.
       }
     );
 
-### storeInfo(providerInfo, clientInfo)
+#### storeInfo(providerInfo, clientInfo)
 * _providerInfo - The Identity Provider's configuration options described in OIDC.supportedProviderOptions_ <br>
 * _clientInfo - The Client's configuration options described in OIDC.supportedClientOptions_ <br>
 
 Stores the Identity Provider and Client configuration options in the browser session storage for reuse later.
 
-### restoreInfo()
+#### restoreInfo()
 
 Load and restore the Identity Provider and Client configuration options from the browser session storage.
 
-### checkRequiredInfo(params)
+#### checkRequiredInfo(params)
 * _params - List of Identity Provider and client configuration parameters_ <br>
 
 Check whether the required configuration parameters are set.
 
-### clearProviderInfo()
+#### clearProviderInfo()
 
 Clears the Identity Provider configuration parameters.
 
-### login(reqOptions)
+#### login(reqOptions)
 * _reqOptions - Optional authentication request options(OIDC.supportedRequestOptions)_ <br>
 
 Redirect to the Identity Provider for authenticaton.
@@ -122,55 +122,55 @@ Redirect to the Identity Provider for authenticaton.
     // scope = openid and response_type = id_token
     OIDC.login();
 
-### verifyIdTokenSig(id_token)
+#### verifyIdTokenSig(id_token)
 * *id_token - The ID Token string* <br>
 
 Verifies the ID Token signature using the JWK Keyset from jwks or jwks_uri of the Identity Provider Configuration options set via *OIDC.setProviderInfo*. Supports only RSA signatures.
 
-### isValidIdToken(id_token)
+#### isValidIdToken(id_token)
 * *id_token - The ID Token string* <br>
 
 Validates the information in the ID Token against configuration data in the Identity Provider and Client configuration set via *OIDC.setProviderInfo* and set via *OIDC.setClientInfo*.
 
-### rsaVerifyJWS(jws, jwk)
+#### rsaVerifyJWS(jws, jwk)
 * *jws - The JWS string* <br>
 * *jwk - The JWK Key that will be used to verify the signature* <br>
 
 Verifies the JWS string using the JWK.
 
-### getValidIdToken()
+#### getValidIdToken()
 
 Get the ID Token from the current page URL whose signature is verified and contents validated against the configuration data set via *OIDC.setProviderInfo* and *OIDC.setClientInfo*.
 
-### getAccessToken()
+#### getAccessToken()
 
 Get Access Token from the current page URL.
 
-### getCode()
+#### getCode()
 
 Get Authorization Code from the current page URL.
 
-### getIdTokenParts(id_token)
+#### getIdTokenParts(id_token)
 * *id_token - The ID Token string* <br>
 
 Splits the ID Token string into the individual JWS parts.
 
-### getIdTokenPayload(id_token)
+#### getIdTokenPayload(id_token)
 * *id_token - The ID Token string* <br>
 
 Get the contents of the ID Token payload as an JSON object.
 
-### getJsonObject(jsonS)
+#### getJsonObject(jsonS)
 * *jsonS - JSON string* <br>
 
 Get the JSON object from the JSON string
 
-### fetchJSON(url)
+#### fetchJSON(url)
 * *url - URL to fetch the JSON file* <br>
 
 Retrieves the JSON file at the specified URL. The URL must have CORS enabled for this function to work.
 
-### jwk_get_key(jwkIn, kty, use, kid)
+#### jwk_get_key(jwkIn, kty, use, kid)
 * *jwkIn - JWK Keyset string or object.* <br>
 * *kty - The 'kty' to match (RSA|EC). Only RSA is supported.* <br>
 * *use - The 'use' to match (sig|enc).* <br>
@@ -178,7 +178,7 @@ Retrieves the JSON file at the specified URL. The URL must have CORS enabled for
 
 Retrieve the JWK key that matches the input criteria.
 
-### discover(issuer)
+#### discover(issuer)
 * *issuer - The Identity Provider's issuer_id* <br>
 
 Performs discovery on the IdP issuer_id.
