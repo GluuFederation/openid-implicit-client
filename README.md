@@ -70,7 +70,7 @@ Sets the Identity Provider's configuration parameters. It may be done declaring 
       OIDC.setProviderInfo(discovery);
 
 #### setClientInfo(p)
-* _p - The Client's configuration options described in [OIDC.supportedClientOptions](# Supported Client Options)_ <br>
+* _p - The Client's configuration options described in [OIDC.supportedClientOptions](# supported-client-options)_ <br>
 
 Sets the Client's configuration parameters. It returns a boolean value indicating the success or failure of the operation.
 
