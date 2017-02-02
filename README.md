@@ -52,9 +52,9 @@ List of supported Client configuration parameters. <br>
 ## OIDC Methods
 
 #### setProviderInfo(p)
-* _p - The Identity Provider's configuration options described in OIDC.supportedProviderOptions_ <br>
+* _p - The Identity Provider's configuration options described in [OIDC.supportedProviderOptions](#supported-provider-options)_ <br>
 
-Sets the Identity Provider's configuration parameters. It may be done declaring each parameter on code or using the returning information from OIDC.discover('https:<nolink>//(hostname)'). It returns a boolean value indicating the success or failure of the operation. <br>
+Sets the Identity Provider's configuration parameters. It may be done declaring each parameter on code or using the returning information from [OIDC.discover('https:<nolink>//(hostname)')](#discover(issuer). It returns a boolean value indicating status of call. <br>
 
 ###### Example:
     // set Identity Provider configuration
@@ -72,7 +72,7 @@ Sets the Identity Provider's configuration parameters. It may be done declaring 
 #### setClientInfo(p)
 * _p - The Client's configuration options described in [OIDC.supportedClientOptions](#supported-client-options)_ <br>
 
-Sets the Client's configuration parameters. It returns a boolean value indicating the success or failure of the operation.
+Sets the Client's configuration parameters. It returns a boolean value indicating status of call.
 
 ###### Example:
     // set client_id and redirect_uri
@@ -83,28 +83,28 @@ Sets the Client's configuration parameters. It returns a boolean value indicatin
     );
 
 #### storeInfo(providerInfo, clientInfo)
-* _providerInfo - The Identity Provider's configuration options described in OIDC.supportedProviderOptions_ <br>
-* _clientInfo - The Client's configuration options described in OIDC.supportedClientOptions_ <br>
+* _providerInfo - The Identity Provider's configuration options described in [OIDC.supportedProviderOptions](#supported-provider-options)_ <br>
+* _clientInfo - The Client's configuration options described in [OIDC.supportedClientOptions](#supported-client-options)_ <br>
 
 Stores the Identity Provider and Client configuration options in the browser session storage for reuse later.
 
 #### restoreInfo()
 
-Load and restore the Identity Provider and Client configuration options from the browser session storage.
+Load and set the Identity Provider and Client configuration options from the browser session storage.
 
 #### checkRequiredInfo(params)
 * _params - List of Identity Provider and client configuration parameters_ <br>
 
-Check whether the required configuration parameters are set.
+Check whether the required configuration parameters are set. It returns a boolean value indicating whether the options have been set.
 
 #### clearProviderInfo()
 
 Clears the Identity Provider configuration parameters.
 
 #### login(reqOptions)
-* _reqOptions - Optional authentication request options(OIDC.supportedRequestOptions)_ <br>
+* _reqOptions - Optional authentication request options [(OIDC.supportedRequestOptions)](#supported-request-options)_ <br>
 
-Redirect to the Identity Provider for authenticaton.
+Redirect to the Identity Provider for authentication.
 
 ###### Example:
     // login with options
@@ -125,50 +125,50 @@ Redirect to the Identity Provider for authenticaton.
 #### verifyIdTokenSig(id_token)
 * *id_token - The ID Token string* <br>
 
-Verifies the ID Token signature using the JWK Keyset from jwks or jwks_uri of the Identity Provider Configuration options set via *OIDC.setProviderInfo*. Supports only RSA signatures.
+Verifies the ID Token signature using the JWK Keyset from jwks or jwks_uri of the Identity Provider Configuration options set via *[OIDC.setProviderInfo](#supported-provider-options)*. Supports only RSA signatures. It returns a boolean value indicates whether the signature is valid or not.
 
 #### isValidIdToken(id_token)
 * *id_token - The ID Token string* <br>
 
-Validates the information in the ID Token against configuration data in the Identity Provider and Client configuration set via *OIDC.setProviderInfo* and set via *OIDC.setClientInfo*.
+Validates the information in the ID Token against configuration data in the Identity Provider and Client configuration set via *[OIDC.setProviderInfo](#supported-provider-options)* and set via *[OIDC.setClientInfo](#supported-client-options)*. It returns a boolean value indicating the validity of the ID Token.
 
 #### rsaVerifyJWS(jws, jwk)
 * *jws - The JWS string* <br>
 * *jwk - The JWK Key that will be used to verify the signature* <br>
 
-Verifies the JWS string using the JWK.
+Verifies the JWS string using the JWK. It returns a boolean value indicating the validity of the JWS signature.
 
 #### getValidIdToken()
 
-Return the ID Token from the current page URL whose signature is verified and contents validated against the configuration data set via *OIDC.setProviderInfo* and *OIDC.setClientInfo*.
+Return the ID Token string taken from the current page URL whose signature is verified and contents validated against the configuration data set via *[OIDC.setProviderInfo](#supported-provider-options)* and *[OIDC.setClientInfo](#supported-client-options)*.
 
 #### getAccessToken()
 
-Return Access Token from the current page URL.
+Return Access Token string taken from the current page URL.
 
 #### getCode()
 
-Return Authorization Code from the current page URL.
+Return Authorization Code string taken from the current page URL.
 
 #### getIdTokenParts(id_token)
 * *id_token - The ID Token string* <br>
 
-Splits the ID Token string into the individual JWS parts.
+Splits the ID Token string into the individual JWS parts. It returns an array of the JWS compact serialization components (header, payload, signature).
 
 #### getIdTokenPayload(id_token)
 * *id_token - The ID Token string* <br>
 
-Return the contents of the ID Token payload as an JSON object.
+Return a JSON object with contents of the ID Token payload.
 
 #### getJsonObject(jsonS)
 * *jsonS - JSON string* <br>
 
-Return the JSON object from the JSON string
+Return the JSON object from the JSON string.
 
 #### fetchJSON(url)
 * *url - URL to fetch the JSON file* <br>
 
-Retrieves the JSON file at the specified URL. The URL must have CORS enabled for this function to work.
+Retrieves the JSON file at the specified URL. The URL must have CORS enabled for this function to work. It returns a string of contents of the URL or null.
 
 #### jwk_get_key(jwkIn, kty, use, kid)
 * *jwkIn - JWK Keyset string or object.* <br>
@@ -176,9 +176,9 @@ Retrieves the JSON file at the specified URL. The URL must have CORS enabled for
 * *use - The 'use' to match (sig|enc).* <br>
 * *kid - The 'kid' to match* <br>
 
-Retrieve the JWK key that matches the input criteria.
+Retrieve the JWK key that matches the input criteria. It returns an array of JWK keys that match the specified criteria.
 
 #### discover(issuer)
 * *issuer - The Identity Provider's issuer_id* <br>
 
-Performs discovery on the IdP issuer_id.
+Performs discovery on the Identity Provider's issuer_id. It returns the JSON object of the discovery document or null.
