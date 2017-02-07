@@ -967,6 +967,14 @@ OIDC.getUserInfo = function(access_token)
   }
 }
 
+OIDC.clientRegistration = function(){
+  try {
+      
+  } catch (e) {
+      throw new OidcException('Unable to register new client:' + e.toString());
+  }
+}
+
 function getHTMLTableFromJSONObj(JSONObj)
 {
     try {
