@@ -975,7 +975,7 @@ OIDC.clientRegistration = function(){
   }
 }
 
-function getHTMLTableFromJSONObj(JSONObj)
+function JSONObjToHTMLTable(JSONObj)
 {
     try {
       var HTMLString = '\n<table class="table table-striped">';
