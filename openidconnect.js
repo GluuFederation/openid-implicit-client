@@ -258,9 +258,12 @@ OIDC.setProviderInfo = function (p)
 OIDC.setClientInfo = function(p)
 {
     var params = this.supportedClientOptions;
-
     try{
         if(typeof p !== 'undefined') {
+            // if (typeof p['client_id'] == 'undefined'){
+            //   clientInfoFromServer = OIDC.clientRegistration(p['redirect_uri'])
+            //   p['client_id'] = clientInfoFromServer['client_id'];
+            // }
             for(var i = 0; i < params.length; i++) {
                 if(typeof p[params[i]] !== 'undefined') {
                     this[params[i]] = p[params[i]];
@@ -967,9 +970,26 @@ OIDC.getUserInfo = function(access_token)
   }
 }
 
-OIDC.clientRegistration = function(){
+OIDC.clientRegistration = function(redirect_uri){
   try {
-      
+      var clientMetadata = {
+          "redirect_uris" : [redirect_uri],
+          "application_type": 'Web',
+          "client_name": 'New Client12',
+          "subject_type": 'public',
+          "response_types": ['token', 'id_token'],
+          "grant_types": ['implicit'],
+          "scope": ['email', 'openid', 'profile']
+      };
+      var request = new XMLHttpRequest();
+      request.open("POST", providerInfo['registration_endpoint'], false);
+      request.setRequestHeader("Content-Type", "application/json");
+      request.setRequestHeader("Accept", "application/json");
+      request.send(JSON.stringify(clientMetadata));
+      if (request.status === 200) {
+          return JSON.parse(request.responseText);
+      } else
+          throw new OidcException("getUserInfo - " + request.status + ' ' + request.statusText);
   } catch (e) {
       throw new OidcException('Unable to register new client:' + e.toString());
   }
