@@ -12,7 +12,7 @@
             OIDC.restoreInfo();
             var id_token = OIDC.getValidIdToken();
             OIDC.debug(true, id_token);
-            var tokenClaims = OIDC.getIdTokenParts(id_token)[1];
+            var tokenClaims = JSON.parse(OIDC.getIdTokenParts(id_token)[1]);
             var tokenClaimsHTMLString = getHTMLTableFromJSONObj(tokenClaims);
             var access_token = OIDC.getAccessToken();
             var userInfoClaims = OIDC.getUserInfo(access_token);

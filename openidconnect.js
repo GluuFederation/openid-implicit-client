@@ -978,10 +978,9 @@ OIDC.clientRegistration = function(){
 function getHTMLTableFromJSONObj(JSONObj)
 {
     try {
-      var map = JSON.parse(JSONObj);
       var HTMLString = '\n<table class="table table-striped">';
-      for (var claim in map){
-         HTMLString = HTMLString + '\n<TR><TD>' + claim + '</TD><TD>' + map[claim] + '</TD></TR>';
+      for (var claim in JSONObj){
+         HTMLString = HTMLString + '\n<TR><TD>' + claim + '</TD><TD>' + JSONObj[claim] + '</TD></TR>';
       }
       HTMLString = HTMLString + '\n</table>';
       return HTMLString;
