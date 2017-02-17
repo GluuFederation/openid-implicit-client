@@ -260,10 +260,10 @@ OIDC.setClientInfo = function(p)
     var params = this.supportedClientOptions;
     try{
         if(typeof p !== 'undefined') {
-            // if (typeof p['client_id'] == 'undefined'){
-            //   clientInfoFromServer = OIDC.clientRegistration(p['redirect_uri'])
-            //   p['client_id'] = clientInfoFromServer['client_id'];
-            // }
+            if (typeof p['client_id'] == 'undefined'){
+              clientInfoFromServer = OIDC.clientRegistration(p['redirect_uri'])
+              p['client_id'] = clientInfoFromServer['client_id'];
+            }
             for(var i = 0; i < params.length; i++) {
                 if(typeof p[params[i]] !== 'undefined') {
                     this[params[i]] = p[params[i]];
