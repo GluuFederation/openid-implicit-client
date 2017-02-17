@@ -974,12 +974,12 @@ OIDC.clientRegistration = function(redirect_uri){
   try {
       var clientMetadata = {
           "redirect_uris" : [redirect_uri],
-          "application_type": 'Web',
-          "client_name": 'New Client12',
-          "subject_type": 'public',
-          "response_types": ['token', 'id_token'],
-          "grant_types": ['implicit'],
-          "scope": ['email', 'openid', 'profile']
+          "application_type": "Web",
+          "client_name": "Dynamically Registered Client",
+          "subject_type": "public",
+          "grant_types": ["implicit"],
+          "response_types": ["token", "id_token"],
+          "scopes": ["email", "openid", "profile"]
       };
       var request = new XMLHttpRequest();
       request.open("POST", providerInfo['registration_endpoint'], false);
