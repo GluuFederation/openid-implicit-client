@@ -10,12 +10,10 @@
 
         <script>
             OIDC.restoreInfo();
-            // console.log(OIDC.discover('https://pkg-deb2.gluu.org'));
             var id_token = OIDC.getValidIdToken();
             OIDC.debug(true, id_token);
             var tokenClaims = JSON.parse(OIDC.getIdTokenParts(id_token)[1]);
             var tokenClaimsHTMLString = JSONObjToHTMLTable(tokenClaims);
-            // OIDC.clientRegistration(['https://pkg-deb2.gluu.org/identity/openid-implicit-client/login-callback.html']);
             var access_token = OIDC.getAccessToken();
             var userInfoClaims = JSON.parse(OIDC.getUserInfo(access_token));
             var userInfoClaimsHTMLString = JSONObjToHTMLTable(userInfoClaims);
