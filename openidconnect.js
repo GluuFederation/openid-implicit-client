@@ -953,12 +953,12 @@ OIDC.discover = function(issuer)
 };
 
 
-/******************************************************************
- * Performs discovery on the IdP issuer_id (OIDC.discover)
- * @function discover
+/**
+ * Request and return the user information from the Identity Provider. (OIDC.getUserInfo)
+ * @function getUserInfo
  * @memberof OIDC
- * @param {string} issuer     - The Identity Provider's issuer_id
- * @returns {object|null}     - The JSON object of the discovery document or null
+ * @param {string} access_token     - Access Token string
+ * @returns {object|null}     - The JSON object of the user claims or null
  * @throws {OidcException}
  */
 OIDC.getUserInfo = function(access_token)

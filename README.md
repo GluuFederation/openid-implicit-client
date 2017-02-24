@@ -192,4 +192,4 @@ Print current Client's configuration options, Identity Provider's configuration 
 #### getUserInfo(access_token)
 * *access_token - Access Token string* <br>
 
-Make the call to UserInfo endpoint with access token. It returns the user claims sent by the Identity Provider.
+Request and return the user information from the Identity Provider.
