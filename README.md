@@ -193,3 +193,14 @@ Print current Client's configuration options, Identity Provider's configuration 
 * *access_token - Access Token string* <br>
 
 Request and return the user information from the Identity Provider.
+
+#### registerClient(redirect_uri)
+* *redirect_uri - Redirect URI string* <br>
+
+Dynamically register a new client with the given redirect URI. It returns a JSON Object with the registered client's information. The following list describe the default configuration for the dynamic registration:
+* Application Type: Web
+* Client Name: Dynamically Registered Client
+* Subject Type: Public
+* Grant Type: implicit
+* Response Type: token, id_token
+* Scopes: email, openid, profile
