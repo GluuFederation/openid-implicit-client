@@ -280,12 +280,15 @@ OIDC.setClientInfo = function(p)
 
 };
 
-/** OIDC.debug(toggle, id_token)
-    params: toggle - enable/disable debugging;
-            id_token - current session id_token;
-    Print provider information, client information and
-    results of id_token verification on console. */
-
+/**
+ * Print provider information, client information and
+ *results of id_token verification on console. (OIDC.debug)
+ * @function debug
+ * @memberof OIDC
+ * @param {boolean} toggle    - Boolean value that enables or disables debugging output
+ * @param {string} id_token   - The ID Token string
+ * @throws {OidcException}
+ */
 OIDC.debug = function (toggle, id_token)
 {
   if (toggle == true){
@@ -949,6 +952,15 @@ OIDC.discover = function(issuer)
     }
 };
 
+
+/******************************************************************
+ * Performs discovery on the IdP issuer_id (OIDC.discover)
+ * @function discover
+ * @memberof OIDC
+ * @param {string} issuer     - The Identity Provider's issuer_id
+ * @returns {object|null}     - The JSON object of the discovery document or null
+ * @throws {OidcException}
+ */
 OIDC.getUserInfo = function(access_token)
 {
   try {
@@ -969,6 +981,7 @@ OIDC.getUserInfo = function(access_token)
       throw new OidcException('Unable to get user info:' + e.toString());
   }
 }
+
 
 OIDC.clientRegistration = function(redirect_uri){
   try {
