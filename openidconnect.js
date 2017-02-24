@@ -261,7 +261,7 @@ OIDC.setClientInfo = function(p)
     try{
         if(typeof p !== 'undefined') {
             if (typeof p['client_id'] == 'undefined'){
-              clientInfoFromServer = OIDC.clientRegistration(p['redirect_uri'])
+              clientInfoFromServer = OIDC.registerClient(p['redirect_uri'])
               p['client_id'] = clientInfoFromServer['client_id'];
             }
             for(var i = 0; i < params.length; i++) {
@@ -983,7 +983,7 @@ OIDC.getUserInfo = function(access_token)
 }
 
 
-OIDC.clientRegistration = function(redirect_uri){
+OIDC.registerClient = function(redirect_uri){
   try {
       var clientMetadata = {
           "redirect_uris" : [redirect_uri],
