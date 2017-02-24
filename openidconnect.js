@@ -982,7 +982,21 @@ OIDC.getUserInfo = function(access_token)
   }
 }
 
-
+/**
+ * Dynamically register a new client with the given redirect URI. (OIDC.registerClient)
+ * The following list describe the default configuration for a client dynamically registered:
+ * Application Type: Web
+ * Client Name: Dynamically Registered Client
+ * Subject Type: Public
+ * Grant Type: implicit
+ * Response Type: token, id_token
+ * Scopes: email, openid, profile
+ * @function registerClient
+ * @memberof OIDC
+ * @param {string} redirect_uri     - The redirect URI string
+ * @returns {object|null}     - The JSON object of the Client information
+ * @throws {OidcException}
+ */
 OIDC.registerClient = function(redirect_uri){
   try {
       var clientMetadata = {
