@@ -442,7 +442,7 @@ OIDC.clearProviderInfo = function()
  * // login with default scope=openid, response_type=id_token
  * OIDC.login();
  */
-OIDC.login = function(reqOptions) {
+OIDC.generateLoginRequest = function(reqOptions) {
     try {
         // verify required parameters
         this.checkRequiredInfo(new Array('client_id', 'redirect_uri', 'authorization_endpoint'));
@@ -566,10 +566,22 @@ OIDC.login = function(reqOptions) {
         + '&state=' + state
         + optParams;
 
-
-        window.location.replace(url);
+        var loginRequest = {
+          'authorization_endpoint': this['authorization_endpoint'],
+          'response_type': response_type,
+          'scope': scope,
+          'nonce': nonce,
+          'client_id': this['client_id'],
+          'redirect_uri': this['redirect_uri'],
+          'state': state,
+          'optional_parameters': optParams,
+          'url': url
+        }
+        return loginRequest;
+        // console.log(loginRequest);
+        // window.location.replace(url);
     } catch (e) {
-        throw new OidcException('Unable to redirect to the Identity Provider for authenticaton: ' + e.toString());
+        throw new OidcException('Unable to generate login request: ' + e.toString());
     }
 };
 
