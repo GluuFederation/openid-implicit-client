@@ -19,7 +19,7 @@
             var userInfoClaimsHTMLString = JSONObjToHTMLTable(userInfoClaims);
 
             function print_id_token(){
-                document.getElementById("id_token").innerHTML = '<b>Id_token</b>' + tokenClaimsHTMLString +
+                document.getElementById("retrievedInfo").innerHTML = '<b>Id_token</b>' + tokenClaimsHTMLString +
                                                                 '\n<b>User Info</b>' + userInfoClaimsHTMLString;
             }
         </script>
@@ -29,8 +29,8 @@
       <div class="container">
         <h1>Implicit Flow Test Callback</h1>
 
-        <div id="id_token">
-            id_token claims not found.
+        <div id="retrievedInfo">
+            id_token claims and userinfo not found.
         </div>
       </div>
     </BODY>
