@@ -585,6 +585,156 @@ OIDC.generateLoginRequest = function(reqOptions) {
     }
 };
 
+/**
+* Redirect to the Identity Provider for authenticaton
+* @param {object} reqOptions    - Optional authentication request options. See {@link OIDC.supportedRequestOptions}
+* @throws {OidcException}
+* @example
+*
+* // login with options
+* OIDC.login( {
+*               scope : 'openid profile',
+*               response_type : 'token id_token',
+*               max_age : 60,
+*               claims : {
+*                          id_token : ['email', 'phone_number'],
+*                          userinfo : ['given_name', 'family_name']
+*                        }
+*              }
+*            );
+*
+* // login with default scope=openid, response_type=id_token
+* OIDC.login();
+*/
+OIDC.login = function(reqOptions) {
+  try {
+    // verify required parameters
+    this.checkRequiredInfo(new Array('client_id', 'redirect_uri', 'authorization_endpoint'));
+
+    var state = null;
+    var nonce = null;
+
+    // Replace state and nonce with secure ones if
+    var crypto = window.crypto || window.msCrypto;
+    if(crypto && crypto.getRandomValues) {
+      var D = new Uint32Array(2);
+      crypto.getRandomValues(D);
+      state = D[0].toString(36);
+      nonce = D[1].toString(36);
+    } else {
+      var byteArrayToLong = function(/*byte[]*/byteArray) {
+        var value = 0;
+        for ( var i = byteArray.length - 1; i >= 0; i--) {
+          value = (value * 256) + byteArray[i];
+        }
+        return value;
+      };
+
+      rng_seed_time();
+      var sRandom = new SecureRandom();
+      var randState= new Array(4);
+      sRandom.nextBytes(randState);
+      state = byteArrayToLong(randState).toString(36);
+
+      rng_seed_time();
+      var randNonce= new Array(4);
+      sRandom.nextBytes(randNonce);
+      nonce = byteArrayToLong(randNonce).toString(36);
+    }
+
+
+    // Store the them in session storage
+    sessionStorage['state'] = state;
+    sessionStorage['nonce'] = nonce;
+
+    var response_type = 'id_token';
+    var scope = 'openid';
+    var display = null;
+    var max_age = null;
+    var claims = null;
+    var idTokenClaims = {};
+    var userInfoClaims = {};
+
+    if(reqOptions) {
+      if(reqOptions['response_type']) {
+        var parts = reqOptions['response_type'].split(' ');
+        var temp = [];
+        if(parts) {
+          for(var i = 0; i < parts.length; i++) {
+            if(parts[i] == 'code' || parts[i] == 'token' || parts[i] == 'id_token')
+            temp.push(parts[i]);
+          }
+        }
+        if(temp)
+        response_type = temp.join(' ');
+      }
+
+      if(reqOptions['scope'])
+      scope = reqOptions['scope'];
+      if(reqOptions['display'])
+      display = reqOptions['display'];
+      if(reqOptions['max_age'])
+      max_age = reqOptions['max_age'];
+
+
+      if(reqOptions['claims']) {
+
+        if(this['claims_parameter_supported']) {
+
+          if(reqOptions['claims']['id_token']) {
+            for(var j = 0; j < reqOptions['claims']['id_token'].length; j++) {
+              idTokenClaims[reqOptions['claims']['id_token'][j]] = null
+            }
+            if(!claims)
+            claims = {};
+            claims['id_token'] = idTokenClaims;
+          }
+          if(reqOptions['claims']['userinfo']) {
+            for(var k = 0; k < reqOptions['claims']['userinfo'].length; k++) {
+              userInfoClaims[reqOptions['claims']['userinfo'][k]] = null;
+            }
+            if(!claims)
+            claims = {};
+            claims['userinfo'] = userInfoClaims;
+          }
+
+        } else
+        throw new OidcException('Provider does not support claims request parameter')
+
+      }
+    }
+
+    // Construct the redirect URL
+    // For getting an id token, response_type of
+    // "token id_token" (note the space), scope of
+    // "openid", and some value for nonce is required.
+    // client_id must be the consumer key of the connected app.
+    // redirect_uri must match the callback URL configured for
+    // the connected app.
+
+    var optParams = '';
+    if(display)
+    optParams += '&display='  + display;
+    if(max_age)
+    optParams += '&max_age=' + max_age;
+    if(claims)
+    optParams += '&claims=' + JSON.stringify(claims);
+
+    var url =
+    this['authorization_endpoint']
+    + '?response_type=' + response_type
+    + '&scope=' + scope
+    + '&nonce=' + nonce
+    + '&client_id=' + this['client_id']
+    + '&redirect_uri=' + this['redirect_uri']
+    + '&state=' + state
+    + optParams;
+
+    window.location.replace(url);
+  } catch (e) {
+      throw new OidcException('Unable to redirect to the Identity Provider for authenticaton: ' + e.toString());
+  }
+};
 
 /**
  * Verifies the ID Token signature using the JWK Keyset from jwks or jwks_uri of the
