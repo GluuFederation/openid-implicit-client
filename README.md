@@ -72,7 +72,7 @@ Sets the Identity Provider's configuration parameters. It may be done declaring 
 #### setClientInfo(p)
 * _p - The Client's configuration options described in [OIDC.supportedClientOptions](#supported-client-options)_ <br>
 
-Sets the Client's configuration parameters. It returns a boolean value indicating status of call.
+Sets the Client's configuration parameters. It returns a boolean value indicating status of call. If the Client's configuration options does not include a client_id the method will dynamically register a new client with the redirect_uri passed.
 
 ###### Example:
     // set client_id and redirect_uri
