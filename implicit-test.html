@@ -31,9 +31,11 @@
       <div class="container" style="margin-bottom: 50px;">
         <h1>Implicit Flow Test Login Page</h1>
         <b>clientInfo</b>
-        <div id="results"></div>
+        <div id="clientInfo">
+          clientInfo not found
+        </div>
         <script type="text/javascript">
-          document.getElementById('results').innerHTML = JSONObjToHTMLTable(clientInfo) + JSONObjToHTMLTable(loginRequest);
+        document.getElementById('clientInfo').innerHTML = JSONObjToHTMLTable(clientInfo);
         </script>
         Click button to login! &nbsp; &nbsp;
 
