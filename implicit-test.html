@@ -10,11 +10,11 @@
 
         <script>
             var clientInfo = {
-                client_id : '(your-client-id)',
-                redirect_uri : 'https://(hostname)/login-callback.html'
+              client_id : '(your-client-id)',
+              redirect_uri : 'https://(hostname)/login-callback.html'
             };
-            OIDC.setClientInfo( clientInfo );
             var providerInfo = OIDC.discover('https://(providername)');
+            OIDC.setClientInfo( clientInfo );
             OIDC.setProviderInfo( providerInfo );
             OIDC.storeInfo(providerInfo, clientInfo);
             // Remove State and Nonce from previous session

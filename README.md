@@ -72,7 +72,7 @@ Sets the Identity Provider's configuration parameters. It may be done declaring 
 #### setClientInfo(p)
 * _p - The Client's configuration options described in [OIDC.supportedClientOptions](#supported-client-options)_ <br>
 
-Sets the Client's configuration parameters. It returns a boolean value indicating status of call.
+Sets the Client's configuration parameters. It returns a boolean value indicating status of call. If the Client's configuration options does not include a client_id the method will dynamically register a new client with the redirect_uri passed.
 
 ###### Example:
     // set client_id and redirect_uri
@@ -192,4 +192,15 @@ Print current Client's configuration options, Identity Provider's configuration 
 #### getUserInfo(access_token)
 * *access_token - Access Token string* <br>
 
-Make the call to UserInfo endpoint with access token. It returns the user claims sent by the Identity Provider.
+Request and return the user information from the Identity Provider.
+
+#### registerClient(redirect_uri)
+* *redirect_uri - Redirect URI string* <br>
+
+Dynamically register a new client with the given redirect URI. It returns a JSON Object with the registered client's information. The following list describe the default configuration for the dynamic registration:
+* Application Type: Web
+* Client Name: Dynamically Registered Client
+* Subject Type: Public
+* Grant Type: implicit
+* Response Type: token, id_token
+* Scopes: email, openid, profile

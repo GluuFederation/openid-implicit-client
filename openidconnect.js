@@ -258,9 +258,12 @@ OIDC.setProviderInfo = function (p)
 OIDC.setClientInfo = function(p)
 {
     var params = this.supportedClientOptions;
-
     try{
         if(typeof p !== 'undefined') {
+            if (typeof p['client_id'] == 'undefined'){
+              clientInfoFromServer = OIDC.registerClient(p['redirect_uri'])
+              p['client_id'] = clientInfoFromServer['client_id'];
+            }
             for(var i = 0; i < params.length; i++) {
                 if(typeof p[params[i]] !== 'undefined') {
                     this[params[i]] = p[params[i]];
@@ -277,12 +280,15 @@ OIDC.setClientInfo = function(p)
 
 };
 
-/** OIDC.debug(toggle, id_token)
-    params: toggle - enable/disable debugging;
-            id_token - current session id_token;
-    Print provider information, client information and
-    results of id_token verification on console. */
-
+/**
+ * Print provider information, client information and
+ *results of id_token verification on console. (OIDC.debug)
+ * @function debug
+ * @memberof OIDC
+ * @param {boolean} toggle    - Boolean value that enables or disables debugging output
+ * @param {string} id_token   - The ID Token string
+ * @throws {OidcException}
+ */
 OIDC.debug = function (toggle, id_token)
 {
   if (toggle == true){
@@ -946,6 +952,15 @@ OIDC.discover = function(issuer)
     }
 };
 
+
+/**
+ * Request and return the user information from the Identity Provider. (OIDC.getUserInfo)
+ * @function getUserInfo
+ * @memberof OIDC
+ * @param {string} access_token     - Access Token string
+ * @returns {object|null}     - The JSON object of the user claims or null
+ * @throws {OidcException}
+ */
 OIDC.getUserInfo = function(access_token)
 {
   try {
@@ -967,13 +982,52 @@ OIDC.getUserInfo = function(access_token)
   }
 }
 
-function getHTMLTableFromJSONObj(JSONObj)
+/**
+ * Dynamically register a new client with the given redirect URI. (OIDC.registerClient)
+ * The following list describe the default configuration for a client dynamically registered:
+ * Application Type: Web
+ * Client Name: Dynamically Registered Client
+ * Subject Type: Public
+ * Grant Type: implicit
+ * Response Type: token, id_token
+ * Scopes: email, openid, profile
+ * @function registerClient
+ * @memberof OIDC
+ * @param {string} redirect_uri     - The redirect URI string
+ * @returns {object|null}     - The JSON object of the Client information
+ * @throws {OidcException}
+ */
+OIDC.registerClient = function(redirect_uri){
+  try {
+      var clientMetadata = {
+          "redirect_uris" : [redirect_uri],
+          "application_type": "Web",
+          "client_name": "Dynamically Registered Client",
+          "subject_type": "public",
+          "grant_types": ["implicit"],
+          "response_types": ["token", "id_token"],
+          "scopes": ["email", "openid", "profile"]
+      };
+      var request = new XMLHttpRequest();
+      request.open("POST", providerInfo['registration_endpoint'], false);
+      request.setRequestHeader("Content-Type", "application/json");
+      request.setRequestHeader("Accept", "application/json");
+      request.send(JSON.stringify(clientMetadata));
+      if (request.status === 200) {
+          return JSON.parse(request.responseText);
+      } else
+          throw new OidcException("getUserInfo - " + request.status + ' ' + request.statusText);
+  } catch (e) {
+      throw new OidcException('Unable to register new client:' + e.toString());
+  }
+}
+
+function JSONObjToHTMLTable(JSONObj)
 {
     try {
-      var map = JSON.parse(JSONObj);
       var HTMLString = '\n<table class="table table-striped">';
-      for (var claim in map){
-         HTMLString = HTMLString + '\n<TR><TD>' + claim + '</TD><TD>' + map[claim] + '</TD></TR>';
+      for (var claim in JSONObj){
+         HTMLString = HTMLString + '\n<TR><TD>' + claim + '</TD><TD>' + JSONObj[claim] + '</TD></TR>';
       }
       HTMLString = HTMLString + '\n</table>';
       return HTMLString;
