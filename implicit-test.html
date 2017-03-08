@@ -37,14 +37,17 @@
         <script type="text/javascript">
         document.getElementById('clientInfo').innerHTML = JSONObjToHTMLTable(clientInfo);
         </script>
-        Click button to login! &nbsp; &nbsp;
-
-        <button onClick="OIDC.login( {scope : 'openid profile email',
-                                  response_type : 'token id_token'} );"
-        type="button" class="btn btn-success" >Authenticate</button>
         <b>loginRequest</b>
         <div id="loginRequest">
           loginRequest not generated yet
+        </div>
+        <div class="buttons">
+          <button onClick="document.getElementById('loginRequest').innerHTML =
+          JSONObjToHTMLTable(loginRequest);"
+          type="button" class="btn btn-primary" >Generate Login Request</button>
+          <button onClick="OIDC.login( {scope : 'openid profile email',
+          response_type : 'token id_token'} );"
+          type="button" class="btn btn-success" >Authenticate</button>
         </div>
       </div>
     </BODY>
