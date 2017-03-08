@@ -422,26 +422,12 @@ OIDC.clearProviderInfo = function()
 
 
 /**
- * Redirect to the Identity Provider for authenticaton
- * @param {object} reqOptions    - Optional authentication request options. See {@link OIDC.supportedRequestOptions}
- * @throws {OidcException}
- * @example
- *
- * // login with options
- * OIDC.login( {
- *               scope : 'openid profile',
- *               response_type : 'token id_token',
- *               max_age : 60,
- *               claims : {
- *                          id_token : ['email', 'phone_number'],
- *                          userinfo : ['given_name', 'family_name']
- *                        }
- *              }
- *            );
- *
- * // login with default scope=openid, response_type=id_token
- * OIDC.login();
- */
+* Generate Login Request for debugging purpose.
+* @param {object} reqOptions    - Optional authentication request options. See {@link OIDC.supportedRequestOptions}
+* @throws {OidcException}
+* @memberof OIDC
+* @return {JSON}        - All data need to login including the URL for authentication.
+*/
 OIDC.generateLoginRequest = function(reqOptions) {
     try {
         // verify required parameters
