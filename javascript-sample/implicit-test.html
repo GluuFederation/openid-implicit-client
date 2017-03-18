@@ -42,11 +42,11 @@
         <div id="loginRequest">
           loginRequest not generated yet
         </div>
+        <script type="text/javascript">
+        document.getElementById('loginRequest').innerHTML = JSONObjToHTMLTable(loginRequest);
+        </script>
         <br>
         <div class="buttons">
-          <button onClick="document.getElementById('loginRequest').innerHTML =
-          JSONObjToHTMLTable(loginRequest);"
-          type="button" class="btn btn-primary" >Generate Login Request</button>
           <button onClick="OIDC.login( {scope : 'openid profile email',
           response_type : 'token id_token'} );"
           type="button" class="btn btn-success" >Authenticate</button>
