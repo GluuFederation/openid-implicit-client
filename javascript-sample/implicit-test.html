@@ -18,11 +18,11 @@
             OIDC.setClientInfo( clientInfo );
             OIDC.setProviderInfo( providerInfo );
             OIDC.storeInfo(providerInfo, clientInfo);
-            loginRequest = OIDC.generateLoginRequest({scope : 'openid profile email',
-                                      response_type : 'token id_token'});
             // Remove State and Nonce from previous session
             sessionStorage.removeItem('state');
             sessionStorage.removeItem('nonce');
+            loginRequest = OIDC.generateLoginRequest({scope : 'openid profile email',
+            response_type : 'token id_token'});
         </script>
 
     </HEAD>
