@@ -564,8 +564,6 @@ OIDC.generateLoginRequest = function(reqOptions) {
           'url': url
         }
         return loginRequest;
-        // console.log(loginRequest);
-        // window.location.replace(url);
     } catch (e) {
         throw new OidcException('Unable to generate login request: ' + e.toString());
     }
