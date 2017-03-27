@@ -1,0 +1,21 @@
+{
+  "name": "openid-implicit-client",
+  "authors": [
+    "Mike Schwartz <info@gluu.org>",
+    "Rafael Toledo <rafael@gluu.org>"
+  ],
+  "description": "Simple Javascript client that implements the OpenID Connect implicit flow",
+  "main": "openidconnect.js",
+  "keywords": [
+    "openidconnect"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/GluuFederation/openid-implicit-client",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
