@@ -1,3 +1,3 @@
 # Vanilla JavaScript Sample
 
-This sample demonstrate how to implement user authentication in a JavaScript application using Gluu OpenID Connect Implicit Client.
+Vanilla JS sample application using Gluu OpenID Connect Implicit Client. A full tutorial on building this sample is available [here](https://gluufederation.github.io/docs-dev/integration/spa/javascript/).
