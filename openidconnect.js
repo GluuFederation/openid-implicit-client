@@ -1113,7 +1113,15 @@ OIDC.getUserInfo = function(access_token)
       var providerURL = JSON.parse(sessionStorage['providerInfo'])['issuer']
       var providerInfo = OIDC.discover(providerURL);
       var request = new XMLHttpRequest();
+
+      /*
+       * Note: A Cross-Origin Request with HTTP POST method should indicate the Content-type
+       * header: application/x-www-form-urlencoded, application/form-data or text/plain for
+       * Simple Requests or a different value for Preflighted Requests
+       */
       request.open('POST', providerInfo['userinfo_endpoint'], false);
+      request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+   
       request.setRequestHeader("authorization", "Bearer " + access_token);
       request.send(null);
 
