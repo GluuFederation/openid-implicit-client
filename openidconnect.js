@@ -897,7 +897,7 @@ OIDC.getAccessToken = function()
     try {
       var url = window.location.href;
       // Check for token
-      var token = url.match('[?#]access_token=([^&]*)');
+      var token = url.match('[?#&]access_token=([^&]*)');
       if (token)
         return token[1];
       else
