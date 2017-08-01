@@ -865,7 +865,7 @@ OIDC.getValidIdToken = function()
         }
 
         // Extract id token from the id_token parameter
-        var match = url.match('[?&]id_token=([^&]*)');
+        var match = url.match('[?#&]id_token=([^&]*)');
         if (badstate) {
           throw new OidcException("State mismatch");
         } else if (match) {
