@@ -714,6 +714,8 @@ OIDC.login = function(reqOptions) {
     + '&state=' + state
     + optParams;
 
+    if (reqOptions['window'])
+      return window.open(url, '_blank', reqOptions['window']);
     window.location.replace(url);
   } catch (e) {
       throw new OidcException('Unable to redirect to the Identity Provider for authenticaton: ' + e.toString());
