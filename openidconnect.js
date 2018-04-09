@@ -599,11 +599,12 @@ OIDC.login = function(reqOptions) {
     var nonce = null;
 
     // Replace state and nonce with secure ones if
+
     var crypto = window.crypto || window.msCrypto;
     if(crypto && crypto.getRandomValues) {
       var D = new Uint32Array(2);
       crypto.getRandomValues(D);
-      state = D[0].toString(36);
+      state = reqOptions && reqOptions['state'] ? reqOptions['state'] : D[0].toString(36);
       nonce = D[1].toString(36);
     } else {
       var byteArrayToLong = function(/*byte[]*/byteArray) {
@@ -1123,7 +1124,7 @@ OIDC.getUserInfo = function(access_token)
        */
       request.open('POST', providerInfo['userinfo_endpoint'], false);
       request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-   
+
       request.setRequestHeader("authorization", "Bearer " + access_token);
       request.send(null);
 
