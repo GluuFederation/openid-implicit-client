@@ -166,6 +166,7 @@ OIDC.supportedProviderOptions = [
  * @property {string} OIDC.supportedRequestOptions.response_type  - space separated response_type values
  * @property {string} OIDC.supportedRequestOptions.display    - display
  * @property {string} OIDC.supportedRequestOptions.max_age    - max_age
+ * @property {string} OIDC.supportedRequestOptions.state    - state
  * @property {object} OIDC.supportedRequestOptions.claims    - claims object containing what information to return in the UserInfo endpoint and ID Token
  * @property {array} OIDC.supportedRequestOptions.claims.id_token    - list of claims to return in the ID Token
  * @property {array} OIDC.supportedRequestOptions.claims.userinfo    - list of claims to return in the UserInfo endpoint
