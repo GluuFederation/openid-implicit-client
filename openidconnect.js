@@ -167,6 +167,7 @@ OIDC.supportedProviderOptions = [
  * @property {string} OIDC.supportedRequestOptions.display    - display
  * @property {string} OIDC.supportedRequestOptions.max_age    - max_age
  * @property {string} OIDC.supportedRequestOptions.state    - state
+ * @property {string} OIDC.supportedRequestOptions.nonce    - nonce
  * @property {object} OIDC.supportedRequestOptions.claims    - claims object containing what information to return in the UserInfo endpoint and ID Token
  * @property {array} OIDC.supportedRequestOptions.claims.id_token    - list of claims to return in the ID Token
  * @property {array} OIDC.supportedRequestOptions.claims.userinfo    - list of claims to return in the UserInfo endpoint
@@ -596,17 +597,22 @@ OIDC.login = function(reqOptions) {
     // verify required parameters
     this.checkRequiredInfo(new Array('client_id', 'redirect_uri', 'authorization_endpoint'));
 
+    var reqOptionsExist = !!reqOptions;
     var state = null;
     var nonce = null;
 
-    // Replace state and nonce with secure ones if
+    if(reqOptionsExist && (reqOptions['nonce'] && reqOptions['state'])) {
+      state = reqOptions['state']
+      nonce = reqOptions['nonce']
+    }
 
+    // Replace state and nonce with secure ones if
     var crypto = window.crypto || window.msCrypto;
     if(crypto && crypto.getRandomValues) {
       var D = new Uint32Array(2);
       crypto.getRandomValues(D);
-      state = reqOptions && reqOptions['state'] ? reqOptions['state'] : D[0].toString(36);
-      nonce = D[1].toString(36);
+      state = reqOptionsExist && reqOptions['state'] ? reqOptions['state'] : D[0].toString(36);
+      nonce = reqOptionsExist && reqOptions['nonce'] ? reqOptions['nonce'] : D[1].toString(36);
     } else {
       var byteArrayToLong = function(/*byte[]*/byteArray) {
         var value = 0;
@@ -641,7 +647,7 @@ OIDC.login = function(reqOptions) {
     var idTokenClaims = {};
     var userInfoClaims = {};
 
-    if(reqOptions) {
+    if(reqOptionsExist) {
       if(reqOptions['response_type']) {
         var parts = reqOptions['response_type'].split(' ');
         var temp = [];
