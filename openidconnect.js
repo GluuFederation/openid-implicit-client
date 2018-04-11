@@ -856,6 +856,7 @@ OIDC.getValidIdToken = function()
 {
     try {
         var url = window.location.href;
+        console.log('url', url, window.location)
 
         // Check if there was an error parameter
         var error = url.match('[?&]error=([^&]*)')
@@ -869,6 +870,7 @@ OIDC.getValidIdToken = function()
         if (smatch) {
           var state = smatch[1] ;
           var sstate = sessionStorage['state'];
+          console.log('state: ', state, 'sstate: ', sstate)
           var badstate = (state != sstate);
         }
 
