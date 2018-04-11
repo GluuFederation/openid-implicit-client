@@ -868,8 +868,8 @@ OIDC.getValidIdToken = function()
         // Exract state from the state parameter
         var smatch = url.match('[?&]state=([^&]*)');
         if (smatch) {
-          var state = smatch[1];
-          var sstate = decodeURIComponent(sessionStorage['state']);
+          var state = decodeURIComponent(smatch[1]);
+          var sstate = sessionStorage['state'];
           console.log('state: ', state, 'sstate: ', sstate)
           var badstate = (state != sstate);
         }
