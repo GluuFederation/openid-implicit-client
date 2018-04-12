@@ -161,17 +161,17 @@ OIDC.supportedProviderOptions = [
 ];
 
 /**
- * @property {array} OIDC.supportedRequestOptions             - Supported Login Request parameters
- * @property {string} OIDC.supportedRequestOptions.scope      - space separated scope values
- * @property {string} OIDC.supportedRequestOptions.response_type  - space separated response_type values
- * @property {string} OIDC.supportedRequestOptions.display    - display
- * @property {string} OIDC.supportedRequestOptions.max_age    - max_age
- * @property {string} OIDC.supportedRequestOptions.state    - state
- * @property {string} OIDC.supportedRequestOptions.nonce    - nonce
- * @property {object} OIDC.supportedRequestOptions.claims    - claims object containing what information to return in the UserInfo endpoint and ID Token
- * @property {array} OIDC.supportedRequestOptions.claims.id_token    - list of claims to return in the ID Token
- * @property {array} OIDC.supportedRequestOptions.claims.userinfo    - list of claims to return in the UserInfo endpoint
- * @property {boolean} OIDC.supportedRequestOptions.request   - signed request object JWS. Not supported yet.
+ * @property {array} OIDC.supportedRequestOptions                  - Supported Login Request parameters
+ * @property {string} OIDC.supportedRequestOptions.scope           - space separated scope values
+ * @property {string} OIDC.supportedRequestOptions.response_type   - space separated response_type values
+ * @property {string} OIDC.supportedRequestOptions.display         - display
+ * @property {string} OIDC.supportedRequestOptions.max_age         - max_age
+ * @property {string} [OIDC.supportedRequestOptions.state]         - state
+ * @property {string} [OIDC.supportedRequestOptions.nonce]         - nonce
+ * @property {object} OIDC.supportedRequestOptions.claims          - claims object containing what information to return in the UserInfo endpoint and ID Token
+ * @property {array} OIDC.supportedRequestOptions.claims.id_token  - list of claims to return in the ID Token
+ * @property {array} OIDC.supportedRequestOptions.claims.userinfo  - list of claims to return in the UserInfo endpoint
+ * @property {boolean} OIDC.supportedRequestOptions.request        - signed request object JWS. Not supported yet.
  * @readonly
  * @memberof OIDC
  *
@@ -186,9 +186,20 @@ OIDC.supportedRequestOptions = [
 ];
 
 /**
- * @property {array} OIDC.supportedClientOptions                 - List of supported Client configuration parameters
- * @property {string} OIDC.supportedClientOptions.client_id      - The client's client_id
- * @property {string} OIDC.supportedClientOptions.redirect_uri   - The client's redirect_uri
+ * @property {array} OIDC.validationOptions                             - Supported Validation parameters
+ * @property {function(string, string)} [OIDC.validationOptions.stateValidator]           - callback function for custom state validation
+ * @readonly
+ * @memberof OIDC
+ *
+ */
+OIDC.validationOptions = [
+    'stateValidator'
+];
+
+/**
+ * @property {array} OIDC.supportedClientOptions                  - List of supported Client configuration parameters
+ * @property {string} OIDC.supportedClientOptions.client_id       - The client's client_id
+ * @property {string} OIDC.supportedClientOptions.redirect_uri    - The client's redirect_uri
  * @readonly
  * @memberof OIDC
  *
@@ -849,10 +860,11 @@ OIDC.rsaVerifyJWS = function (jws, jwk)
 /**
  * Get the ID Token from the current page URL whose signature is verified and contents validated
  * against the configuration data set via {@link OIDC.setProviderInfo} and {@link OIDC.setClientInfo}
+ * @param {object} [options]   - Optional validation options. See {@link OIDC.validationOptions}
  * @returns {string|null}
  * @throws {OidcException}
  */
-OIDC.getValidIdToken = function()
+OIDC.getValidIdToken = function(options)
 {
     try {
         var url = window.location.href;
@@ -865,7 +877,8 @@ OIDC.getValidIdToken = function()
           throw new OidcException(error[1] + ' Description: ' + description[1]);
         }
         // Extract state from the state parameter
-        var state = OIDC.getState();
+        var customValidatorExists = options && options['stateValidator'] && typeof v === 'function';
+        var state = customValidatorExists ? OIDC.getState(options['stateValidator']) : OIDC.getState();
         var badstate = !state.valid;
 
         // Extract id token from the id_token parameter
@@ -894,10 +907,10 @@ OIDC.getValidIdToken = function()
 
 /**
  * Get State from the current page URL and check if there is a state mismatch
- *
- * @returns {object|null}  null or JSON Object a containing the State and a boolean indicating whether or not there is a state mismatch.
+ * @param {function(string, string)} [validator] - An optional callback function for custom state validation
+ * @returns {object|null}    null or JSON Object a containing the State and a boolean indicating whether or not there is a state mismatch.
  */
-OIDC.getState = function()
+OIDC.getState = function(validator)
 {
   try {
     var url = window.location.href;
@@ -905,7 +918,7 @@ OIDC.getState = function()
     if (smatch && smatch[1]) {
       const state = decodeURIComponent(smatch[1]);
       var sstate = sessionStorage['state'];
-      var valid = state && sstate && (state === sstate);
+      var valid = validator ? validator(state, sstate) : (state && sstate && (state === sstate));
       return {
         value: state,
         mismatch: !valid
