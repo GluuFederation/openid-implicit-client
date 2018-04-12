@@ -851,14 +851,18 @@ OIDC.getState = function()
   try {
     var url = window.location.href;
     var smatch = url.match('[?&]state=([^&]*)');
+    var sstate = sessionStorage['state'];
     if (smatch && smatch[1]) {
-      return decodeURIComponent(smatch[1]);
+      const state = decodeURIComponent(smatch[1]);
+      var sstate = sessionStorage['state'];
+      var validState = sstate === state
+      return validState ? state : null
     } else {
       console.error(new Error('No state parameter found on current page URL!'));
       return null;
     }
   } catch (e) {
-    throw new OidcException('Unable to get the State from the current page URL: ' + e.toString());
+    throw new OidcException('Unable to get the state from the current page URL: ' + e.toString());
     return null;
   }
 }
@@ -883,10 +887,7 @@ OIDC.getValidIdToken = function()
         }
         // Exract state from the state parameter
         var state = OIDC.getState()
-        if (state) {
-          var sstate = sessionStorage['state'];
-          var badstate = (state != sstate);
-        }
+        var badstate = !!state
 
         // Extract id token from the id_token parameter
         var match = url.match('[?#&]id_token=([^&]*)');
