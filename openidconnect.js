@@ -886,7 +886,7 @@ OIDC.getValidIdToken = function(validationOptions)
         }
 
         // Extract state from the state parameter
-        var customValidatorExists = options && options['validator'] && typeof options['validator'] === 'function';
+        var customValidatorExists = validationOptions && validationOptions['validator'] && typeof validationOptions['validator'] === 'function';
         var urlState = OIDC.getState();
         var storedState = sessionStorage['state'];
         var goodState = customValidatorExists ? options['validator'](urlState, storedState) : urlState === storedState;
