@@ -846,30 +846,6 @@ OIDC.rsaVerifyJWS = function (jws, jwk)
     }
 }
 
-OIDC.getState = function()
-{
-  try {
-    var url = window.location.href;
-    var smatch = url.match('[?&]state=([^&]*)');
-    var sstate = sessionStorage['state'];
-    if (smatch && smatch[1]) {
-      const state = decodeURIComponent(smatch[1]);
-      var sstate = sessionStorage['state'];
-      var valid = state === sstate
-      return {
-        value: state,
-        valid: valid
-      }
-    } else {
-      console.error(new Error('No state parameter found on current page URL!'));
-      return null;
-    }
-  } catch (e) {
-    throw new OidcException('Unable to get the state from the current page URL: ' + e.toString());
-    return null;
-  }
-}
-
 /**
  * Get the ID Token from the current page URL whose signature is verified and contents validated
  * against the configuration data set via {@link OIDC.setProviderInfo} and {@link OIDC.setClientInfo}
@@ -888,9 +864,9 @@ OIDC.getValidIdToken = function()
           var description = url.match('[?&]error_description=([^&]*)');
           throw new OidcException(error[1] + ' Description: ' + description[1]);
         }
-        // Exract state from the state parameter
-        var state = OIDC.getState()
-        var badstate = !state.valid
+        // Extract state from the state parameter
+        var state = OIDC.getState();
+        var badstate = !state.valid;
 
         // Extract id token from the id_token parameter
         var match = url.match('[?#&]id_token=([^&]*)');
@@ -916,6 +892,34 @@ OIDC.getValidIdToken = function()
     }
 };
 
+/**
+ * Get State from the current page URL and check if it's valid
+ *
+ * @returns {object|null}  JSON Object or null
+ */
+OIDC.getState = function()
+{
+  try {
+    var url = window.location.href;
+    var smatch = url.match('[?&]state=([^&]*)');
+    var sstate = sessionStorage['state'];
+    if (smatch && smatch[1]) {
+      const state = decodeURIComponent(smatch[1]);
+      var sstate = sessionStorage['state'];
+      var valid = state && sstate && (state === sstate);
+      return {
+        value: state,
+        valid: valid
+      }
+    } else {
+      console.error(new Error('No State parameter found on current page URL!'));
+      return null;
+    }
+  } catch (e) {
+    throw new OidcException('Unable to get the State from the current page URL: ' + e.toString());
+    return null;
+  }
+}
 
 /**
  * Get Access Token from the current page URL
