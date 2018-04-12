@@ -851,7 +851,6 @@ OIDC.rsaVerifyJWS = function (jws, jwk)
  * against the configuration data set via {@link OIDC.setProviderInfo} and {@link OIDC.setClientInfo}
  * @param {object} [options]   - Optional validation options
  * @param {function(string, string)} [options.validator] - callback for custom state validation. returns true if valid
- * @param {boolean} [options.returnState] - returns state alongside id_token if set to true
  * @returns {string|null}
  * @throws {OidcException}
  */
@@ -885,11 +884,7 @@ OIDC.getValidIdToken = function(options)
             var sigVerified = this.verifyIdTokenSig(id_token);
             var valid = this.isValidIdToken(id_token);
             if (sigVerified && valid) {
-              var returnStateParameter = options && options['returnState'];
-              return !returnStateParameter ? id_token : {
-                id_token: id_token,
-                state: storedState
-              }
+              return id_token;
             }
           } else {
             throw new OidcException('Could not retrieve ID Token from the URL');
@@ -914,12 +909,6 @@ OIDC.getState = function()
     var smatch = url.match('[?&]state=([^&]*)');
     if (smatch && smatch[1]) {
       return decodeURIComponent(smatch[1]);
-      // var sstate = sessionStorage['state'];
-      // var valid = validator ? validator(state, sstate) : (state && sstate && (state === sstate));
-      // return {
-      //   value: state,
-      //   mismatch: !valid
-      // }
     } else {
       console.error(new Error('No State parameter found on current page URL!'));
       return null;
