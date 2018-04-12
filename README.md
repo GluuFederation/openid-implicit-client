@@ -50,7 +50,7 @@ Supported Login Request parameters. <br>
 
 Supported Login Request parameters. <br>
 
-* **supportedValidationOptions.validator** *(function(string: urlState, string: storedState))*: Custom callback to perform state validation. Returns the state retrieved from the URL and the state retrieved from sessionStorage.<br>
+* **supportedValidationOptions.validator** *(function(string: urlState, string: storedState))*: Callback to perform state validation. Returns the state retrieved from the URL and the state retrieved from sessionStorage.<br>
 
 #### Supported Client Options
 

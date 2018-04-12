@@ -200,7 +200,7 @@ OIDC.supportedClientOptions = [
 ];
 
 /**
- * Custom callback to perform state validation.
+ * Callback to perform state validation.
  * @callback validator
  * @param {string} urlState     - state parameter retrieved from the page URL
  * @param {string} storedState  - state parameter retrieved from session storage
@@ -209,7 +209,7 @@ OIDC.supportedClientOptions = [
 
 /**
  * @property {array} [OIDC.supportedValidationOptions]                - Supported Validation parameters
- * @property {validator} [OIDC.supportedValidationOptions.validator]  - space separated scope values
+ * @property {validator} [OIDC.supportedValidationOptions.validator]  - callback to perform state validation
  * @readonly
  * @memberof OIDC
  *
