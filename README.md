@@ -48,9 +48,9 @@ Supported Login Request parameters. <br>
 
 #### Supported Validation Options
 
-Supported Login Request parameters. <br>
+Supported Validation parameters. <br>
 
-* **supportedValidationOptions.validator** *(function(string: urlState, string: storedState))*: Callback to perform state validation. Returns the state retrieved from the URL and the state retrieved from sessionStorage.<br>
+* **supportedValidationOptions.validator** *(function(string: urlState, string: storedState))*: Callback to perform custom state validation. Returns the state retrieved from the URL and the state retrieved from sessionStorage.<br>
 
 #### Supported Client Options
 
@@ -148,7 +148,8 @@ Validates the information in the ID Token against configuration data in the Iden
 
 Verifies the JWS string using the JWK. It returns a boolean value indicating the validity of the JWS signature.
 
-#### getValidIdToken()
+#### getValidIdToken(validationOptions)
+* _validationOptions - Optional authentication request options ([OIDC.supportedValidationOptions](#supported-validation-options))_ <br>
 
 Return the ID Token string taken from the current page URL whose signature is verified and contents validated against the configuration data set via *[OIDC.setProviderInfo](#setproviderinfop)* and *[OIDC.setClientInfo](#setclientinfop)*.
 
