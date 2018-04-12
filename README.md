@@ -39,8 +39,8 @@ Supported Login Request parameters. <br>
 * **supportedRequestOptions.response_type** *(string)*: Space separated response_type values<br>
 * **supportedRequestOptions.display** *(string)*: Display<br>
 * **supportedRequestOptions.max_age** *(string)*: Max_age<br>
-* **supportedRequestOptions.state** *(string)*: State - Optional - Will be automatically generated if not provided<br>
-* **supportedRequestOptions.nonce** *(string)*: Nonce - Optional - Will be automatically generated if not provided<br>
+* **supportedRequestOptions.state** *(string)*: State - Optional - Automatically generated if not provided<br>
+* **supportedRequestOptions.nonce** *(string)*: Nonce - Optional - Automatically generated if not provided<br>
 * **supportedRequestOptions.claims** *(object)*: Claims object containing what information to return in the UserInfo endpoint and ID Token<br>
 * **supportedRequestOptions.claims.id_token** *(array)*: List of claims to return in the ID Token<br>
 * **supportedRequestOptions.claims.userinfo** *(array)*: List of claims to return in the UserInfo endpoint<br>
