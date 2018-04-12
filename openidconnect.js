@@ -891,6 +891,8 @@ OIDC.getValidIdToken = function(validationOptions)
         var storedState = sessionStorage['state'];
         var goodState = customValidatorExists ? validationOptions['validator'](urlState, storedState) : urlState === storedState;
 
+        console.log({ goodState: goodState, urlState: urlState, storedState: storedState, customValidatorExists: customValidatorExists })
+
         // Extract id token from the id_token parameter
         var match = url.match('[?#&]id_token=([^&]*)');
         if (!goodState) {
