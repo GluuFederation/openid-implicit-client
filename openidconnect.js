@@ -186,17 +186,6 @@ OIDC.supportedRequestOptions = [
 ];
 
 /**
- * @property {array} OIDC.validationOptions                             - Supported Validation parameters
- * @property {function(string, string)} [OIDC.validationOptions.stateValidator]           - callback function for custom state validation
- * @readonly
- * @memberof OIDC
- *
- */
-OIDC.validationOptions = [
-    'stateValidator'
-];
-
-/**
  * @property {array} OIDC.supportedClientOptions                  - List of supported Client configuration parameters
  * @property {string} OIDC.supportedClientOptions.client_id       - The client's client_id
  * @property {string} OIDC.supportedClientOptions.redirect_uri    - The client's redirect_uri
@@ -860,7 +849,9 @@ OIDC.rsaVerifyJWS = function (jws, jwk)
 /**
  * Get the ID Token from the current page URL whose signature is verified and contents validated
  * against the configuration data set via {@link OIDC.setProviderInfo} and {@link OIDC.setClientInfo}
- * @param {object} [options]   - Optional validation options. See {@link OIDC.validationOptions}
+ * @param {object} [options]   - Optional validation options
+ * @param {function(string, string)} [options.validator] - callback for custom state validation. returns true if valid
+ * @param {boolean} [options.returnState] - returns state alongside id_token if set to true
  * @returns {string|null}
  * @throws {OidcException}
  */
@@ -876,14 +867,16 @@ OIDC.getValidIdToken = function(options)
           var description = url.match('[?&]error_description=([^&]*)');
           throw new OidcException(error[1] + ' Description: ' + description[1]);
         }
+
         // Extract state from the state parameter
-        var customValidatorExists = options && options['stateValidator'] && typeof v === 'function';
-        var state = customValidatorExists ? OIDC.getState(options['stateValidator']) : OIDC.getState();
-        var badstate = !state.valid;
+        var customValidatorExists = options && options['validator'] && typeof v === 'function';
+        var urlState = OIDC.getState();
+        var storedState = sessionStorage['state'];
+        var goodState = customValidatorExists ? options['validator'](urlState, storedState) : urlState === storedState;
 
         // Extract id token from the id_token parameter
         var match = url.match('[?#&]id_token=([^&]*)');
-        if (badstate) {
+        if (!goodState) {
           throw new OidcException('State mismatch');
         } else if (match) {
           var id_token = match[1]; // String captured by ([^&]*)
@@ -891,8 +884,13 @@ OIDC.getValidIdToken = function(options)
           if (id_token) {
             var sigVerified = this.verifyIdTokenSig(id_token);
             var valid = this.isValidIdToken(id_token);
-            if(sigVerified && valid)
-            return id_token;
+            if (sigVerified && valid) {
+              var returnStateParameter = options && options['returnState'];
+              return !returnStateParameter ? id_token : {
+                id_token: id_token,
+                state: storedState
+              }
+            }
           } else {
             throw new OidcException('Could not retrieve ID Token from the URL');
           }
@@ -906,23 +904,22 @@ OIDC.getValidIdToken = function(options)
 };
 
 /**
- * Get State from the current page URL and check if there is a state mismatch
- * @param {function(string, string)} [validator] - An optional callback function for custom state validation
- * @returns {object|null}    null or JSON Object a containing the State and a boolean indicating whether or not there is a state mismatch.
+ * Get State from the current page URL
+ * @returns {string|null} State
  */
-OIDC.getState = function(validator)
+OIDC.getState = function()
 {
   try {
     var url = window.location.href;
     var smatch = url.match('[?&]state=([^&]*)');
     if (smatch && smatch[1]) {
-      const state = decodeURIComponent(smatch[1]);
-      var sstate = sessionStorage['state'];
-      var valid = validator ? validator(state, sstate) : (state && sstate && (state === sstate));
-      return {
-        value: state,
-        mismatch: !valid
-      }
+      return decodeURIComponent(smatch[1]);
+      // var sstate = sessionStorage['state'];
+      // var valid = validator ? validator(state, sstate) : (state && sstate && (state === sstate));
+      // return {
+      //   value: state,
+      //   mismatch: !valid
+      // }
     } else {
       console.error(new Error('No State parameter found on current page URL!'));
       return null;
