@@ -39,6 +39,8 @@ Supported Login Request parameters. <br>
 * **supportedRequestOptions.response_type** *(string)*: Space separated response_type values<br>
 * **supportedRequestOptions.display** *(string)*: Display<br>
 * **supportedRequestOptions.max_age** *(string)*: Max_age<br>
+* **supportedRequestOptions.state** *(string)*: State - Optional - Will be automatically generated if not provided<br>
+* **supportedRequestOptions.nonce** *(string)*: Nonce - Optional - Will be automatically generated if not provided<br>
 * **supportedRequestOptions.claims** *(object)*: Claims object containing what information to return in the UserInfo endpoint and ID Token<br>
 * **supportedRequestOptions.claims.id_token** *(array)*: List of claims to return in the ID Token<br>
 * **supportedRequestOptions.claims.userinfo** *(array)*: List of claims to return in the UserInfo endpoint<br>
@@ -147,6 +149,10 @@ Return the ID Token string taken from the current page URL whose signature is ve
 #### getAccessToken()
 
 Return Access Token string taken from the current page URL.
+
+#### getState()
+
+Return a JSON object containing the State string taken from the current page URL and a boolean indicating whether or not there is a state mismatch.
 
 #### getCode()
 
