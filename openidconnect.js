@@ -855,8 +855,11 @@ OIDC.getState = function()
     if (smatch && smatch[1]) {
       const state = decodeURIComponent(smatch[1]);
       var sstate = sessionStorage['state'];
-      var validState = sstate === state
-      return validState ? state : null
+      var valid = state === sstate
+      return {
+        value: state,
+        valid: valid
+      }
     } else {
       console.error(new Error('No state parameter found on current page URL!'));
       return null;
@@ -887,7 +890,7 @@ OIDC.getValidIdToken = function()
         }
         // Exract state from the state parameter
         var state = OIDC.getState()
-        var badstate = !state
+        var badstate = !state.valid
 
         // Extract id token from the id_token parameter
         var match = url.match('[?#&]id_token=([^&]*)');
