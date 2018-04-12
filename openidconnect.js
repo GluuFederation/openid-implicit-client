@@ -893,9 +893,9 @@ OIDC.getValidIdToken = function()
 };
 
 /**
- * Get State from the current page URL and check if it's valid
+ * Get State from the current page URL and check if there is a state mismatch
  *
- * @returns {object|null}  JSON Object or null
+ * @returns {object|null}  null or JSON Object a containing the State and a boolean indicating whether or not there is a state mismatch.
  */
 OIDC.getState = function()
 {
@@ -908,7 +908,7 @@ OIDC.getState = function()
       var valid = state && sstate && (state === sstate);
       return {
         value: state,
-        valid: valid
+        mismatch: !valid
       }
     } else {
       console.error(new Error('No State parameter found on current page URL!'));
