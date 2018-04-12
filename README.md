@@ -46,6 +46,12 @@ Supported Login Request parameters. <br>
 * **supportedRequestOptions.claims.userinfo** *(array)*: List of claims to return in the UserInfo endpoint<br>
 * **supportedRequestOptions.request** *(boolean)*: Signed request object JWS. **Not supported yet.**<br>
 
+#### Supported Validation Options
+
+Supported Login Request parameters. <br>
+
+* **supportedValidationOptions.validator** *(function(string: urlState, string: storedState))*: Custom callback to perform state validation. Returns the state retrieved from the URL and the state retrieved from sessionStorage.<br>
+
 #### Supported Client Options
 
 List of supported Client configuration parameters. <br>

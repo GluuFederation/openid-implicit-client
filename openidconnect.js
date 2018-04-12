@@ -199,6 +199,25 @@ OIDC.supportedClientOptions = [
 //    'client_secret',
 ];
 
+/**
+ * Custom callback to perform state validation.
+ * @callback validator
+ * @param {string} urlState     - state parameter retrieved from the page URL
+ * @param {string} storedState  - state parameter retrieved from session storage
+ * @return {boolean}            - returns true if there is no state mistmatch
+ */
+
+/**
+ * @property {array} [OIDC.supportedValidationOptions]                - Supported Validation parameters
+ * @property {validator} [OIDC.supportedValidationOptions.validator]  - space separated scope values
+ * @readonly
+ * @memberof OIDC
+ *
+ */
+OIDC.supportedValidationOptions = [
+    'validator'
+];
+
 
 /**
  * Sets the Identity Provider's configuration parameters
@@ -849,8 +868,7 @@ OIDC.rsaVerifyJWS = function (jws, jwk)
 /**
  * Get the ID Token from the current page URL whose signature is verified and contents validated
  * against the configuration data set via {@link OIDC.setProviderInfo} and {@link OIDC.setClientInfo}
- * @param {object} [options]   - Optional validation options
- * @param {function(string, string)} [options.validator] - callback for custom state validation. returns true if valid
+ * @param {object} [options]    - Optional validation options. See {@link OIDC.supportedValidationOptions}
  * @returns {string|null}
  * @throws {OidcException}
  */
