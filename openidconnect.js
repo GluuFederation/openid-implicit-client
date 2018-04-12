@@ -858,7 +858,7 @@ OIDC.getValidIdToken = function()
         var url = window.location.href;
 
         // Check if there was an error parameter
-        var error = url.match('[?&]error=([^&]*)')
+        var error = url.match('[?&]error=([^&]*)');
         if (error) {
           // If so, extract the error description and display it
           var description = url.match('[?&]error_description=([^&]*)');
