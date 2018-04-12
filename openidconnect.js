@@ -846,6 +846,23 @@ OIDC.rsaVerifyJWS = function (jws, jwk)
     }
 }
 
+OIDC.getState = function()
+{
+  try {
+    var url = window.location.href;
+    var smatch = url.match('[?&]state=([^&]*)');
+    if (smatch && smatch[1]) {
+      return decodeURIComponent(smatch[1]);
+    } else {
+      console.error(new Error('No state parameter found on current page URL!'));
+      return null;
+    }
+  } catch (e) {
+    throw new OidcException('Unable to get the State from the current page URL: ' + e.toString());
+    return null;
+  }
+}
+
 /**
  * Get the ID Token from the current page URL whose signature is verified and contents validated
  * against the configuration data set via {@link OIDC.setProviderInfo} and {@link OIDC.setClientInfo}
@@ -865,9 +882,8 @@ OIDC.getValidIdToken = function()
           throw new OidcException(error[1] + ' Description: ' + description[1]);
         }
         // Exract state from the state parameter
-        var smatch = url.match('[?&]state=([^&]*)');
-        if (smatch) {
-          var state = decodeURIComponent(smatch[1]);
+        var state = OIDC.getState()
+        if (state) {
           var sstate = sessionStorage['state'];
           var badstate = (state != sstate);
         }
@@ -875,7 +891,7 @@ OIDC.getValidIdToken = function()
         // Extract id token from the id_token parameter
         var match = url.match('[?#&]id_token=([^&]*)');
         if (badstate) {
-          throw new OidcException("State mismatch");
+          throw new OidcException('State mismatch');
         } else if (match) {
           var id_token = match[1]; // String captured by ([^&]*)
 
