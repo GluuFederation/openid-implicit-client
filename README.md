@@ -152,7 +152,7 @@ Return Access Token string taken from the current page URL.
 
 #### getState()
 
-Return a JSON object containing the State string taken from the current page URL and a boolean indicating whether or not there is a state mismatch.
+Return State string taken from the current page URL.
 
 #### getCode()
 
