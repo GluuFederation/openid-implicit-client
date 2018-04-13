@@ -149,7 +149,7 @@ Validates the information in the ID Token against configuration data in the Iden
 Verifies the JWS string using the JWK. It returns a boolean value indicating the validity of the JWS signature.
 
 #### getValidIdToken(validationOptions)
-* _validationOptions - Optional authentication request options ([OIDC.supportedValidationOptions](#supported-validation-options))_ <br>
+* _validationOptions - Optional validation options ([OIDC.supportedValidationOptions](#supported-validation-options))_ <br>
 
 Return the ID Token string taken from the current page URL whose signature is verified and contents validated against the configuration data set via *[OIDC.setProviderInfo](#setproviderinfop)* and *[OIDC.setClientInfo](#setclientinfop)*.
 
