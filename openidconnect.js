@@ -889,7 +889,7 @@ OIDC.getValidIdToken = function(validationOptions)
         var customValidatorExists = validationOptions && validationOptions['validator'] && typeof validationOptions['validator'] === 'function';
         var urlState = OIDC.getState();
         var storedState = sessionStorage['state'];
-        var goodState = customValidatorExists ? validationOptions['validator'](urlState, storedState) : urlState === storedState;
+        var goodState = customValidatorExists ? validationOptions.validator(urlState, storedState) : urlState === storedState;
 
         console.log({ goodState: goodState, urlState: urlState, storedState: storedState, customValidatorExists: customValidatorExists })
 
