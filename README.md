@@ -39,10 +39,18 @@ Supported Login Request parameters. <br>
 * **supportedRequestOptions.response_type** *(string)*: Space separated response_type values<br>
 * **supportedRequestOptions.display** *(string)*: Display<br>
 * **supportedRequestOptions.max_age** *(string)*: Max_age<br>
+* **supportedRequestOptions.state** *(string)*: State - Optional - Automatically generated if not provided<br>
+* **supportedRequestOptions.nonce** *(string)*: Nonce - Optional - Automatically generated if not provided<br>
 * **supportedRequestOptions.claims** *(object)*: Claims object containing what information to return in the UserInfo endpoint and ID Token<br>
 * **supportedRequestOptions.claims.id_token** *(array)*: List of claims to return in the ID Token<br>
 * **supportedRequestOptions.claims.userinfo** *(array)*: List of claims to return in the UserInfo endpoint<br>
 * **supportedRequestOptions.request** *(boolean)*: Signed request object JWS. **Not supported yet.**<br>
+
+#### Supported Validation Options
+
+Supported Validation parameters. <br>
+
+* **supportedValidationOptions.validator** *(function(string: urlState, string: storedState))*: Callback to perform custom state validation. Returns the state retrieved from the URL and the state retrieved from sessionStorage.<br>
 
 #### Supported Client Options
 
@@ -140,13 +148,18 @@ Validates the information in the ID Token against configuration data in the Iden
 
 Verifies the JWS string using the JWK. It returns a boolean value indicating the validity of the JWS signature.
 
-#### getValidIdToken()
+#### getValidIdToken(validationOptions)
+* _validationOptions - Optional validation options ([OIDC.supportedValidationOptions](#supported-validation-options))_ <br>
 
 Return the ID Token string taken from the current page URL whose signature is verified and contents validated against the configuration data set via *[OIDC.setProviderInfo](#setproviderinfop)* and *[OIDC.setClientInfo](#setclientinfop)*.
 
 #### getAccessToken()
 
 Return Access Token string taken from the current page URL.
+
+#### getState()
+
+Return State string taken from the current page URL.
 
 #### getCode()
 

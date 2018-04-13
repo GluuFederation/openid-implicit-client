@@ -161,15 +161,17 @@ OIDC.supportedProviderOptions = [
 ];
 
 /**
- * @property {array} OIDC.supportedRequestOptions             - Supported Login Request parameters
- * @property {string} OIDC.supportedRequestOptions.scope      - space separated scope values
- * @property {string} OIDC.supportedRequestOptions.response_type  - space separated response_type values
- * @property {string} OIDC.supportedRequestOptions.display    - display
- * @property {string} OIDC.supportedRequestOptions.max_age    - max_age
- * @property {object} OIDC.supportedRequestOptions.claims    - claims object containing what information to return in the UserInfo endpoint and ID Token
- * @property {array} OIDC.supportedRequestOptions.claims.id_token    - list of claims to return in the ID Token
- * @property {array} OIDC.supportedRequestOptions.claims.userinfo    - list of claims to return in the UserInfo endpoint
- * @property {boolean} OIDC.supportedRequestOptions.request   - signed request object JWS. Not supported yet.
+ * @property {array} OIDC.supportedRequestOptions                  - Supported Login Request parameters
+ * @property {string} OIDC.supportedRequestOptions.scope           - space separated scope values
+ * @property {string} OIDC.supportedRequestOptions.response_type   - space separated response_type values
+ * @property {string} OIDC.supportedRequestOptions.display         - display
+ * @property {string} OIDC.supportedRequestOptions.max_age         - max_age
+ * @property {string} [OIDC.supportedRequestOptions.state]         - state
+ * @property {string} [OIDC.supportedRequestOptions.nonce]         - nonce
+ * @property {object} OIDC.supportedRequestOptions.claims          - claims object containing what information to return in the UserInfo endpoint and ID Token
+ * @property {array} OIDC.supportedRequestOptions.claims.id_token  - list of claims to return in the ID Token
+ * @property {array} OIDC.supportedRequestOptions.claims.userinfo  - list of claims to return in the UserInfo endpoint
+ * @property {boolean} OIDC.supportedRequestOptions.request        - signed request object JWS. Not supported yet.
  * @readonly
  * @memberof OIDC
  *
@@ -184,9 +186,9 @@ OIDC.supportedRequestOptions = [
 ];
 
 /**
- * @property {array} OIDC.supportedClientOptions                 - List of supported Client configuration parameters
- * @property {string} OIDC.supportedClientOptions.client_id      - The client's client_id
- * @property {string} OIDC.supportedClientOptions.redirect_uri   - The client's redirect_uri
+ * @property {array} OIDC.supportedClientOptions                  - List of supported Client configuration parameters
+ * @property {string} OIDC.supportedClientOptions.client_id       - The client's client_id
+ * @property {string} OIDC.supportedClientOptions.redirect_uri    - The client's redirect_uri
  * @readonly
  * @memberof OIDC
  *
@@ -195,6 +197,25 @@ OIDC.supportedClientOptions = [
     'client_id',
     'redirect_uri'
 //    'client_secret',
+];
+
+/**
+ * Callback to perform custom state validation.
+ * @callback validator
+ * @param {string} urlState     - state parameter retrieved from the page URL
+ * @param {string} storedState  - state parameter retrieved from session storage
+ * @return {boolean}            - returns true if there is no state mistmatch
+ */
+
+/**
+ * @property {array} [OIDC.supportedValidationOptions]                - Supported Validation parameters
+ * @property {validator} [OIDC.supportedValidationOptions.validator]  - callback to perform custom state validation
+ * @readonly
+ * @memberof OIDC
+ *
+ */
+OIDC.supportedValidationOptions = [
+    'validator'
 ];
 
 
@@ -595,16 +616,22 @@ OIDC.login = function(reqOptions) {
     // verify required parameters
     this.checkRequiredInfo(new Array('client_id', 'redirect_uri', 'authorization_endpoint'));
 
+    var reqOptionsExist = !!reqOptions;
     var state = null;
     var nonce = null;
+
+    if(reqOptionsExist && (reqOptions['nonce'] && reqOptions['state'])) {
+      state = reqOptions['state']
+      nonce = reqOptions['nonce']
+    }
 
     // Replace state and nonce with secure ones if
     var crypto = window.crypto || window.msCrypto;
     if(crypto && crypto.getRandomValues) {
       var D = new Uint32Array(2);
       crypto.getRandomValues(D);
-      state = D[0].toString(36);
-      nonce = D[1].toString(36);
+      state = reqOptionsExist && reqOptions['state'] ? reqOptions['state'] : D[0].toString(36);
+      nonce = reqOptionsExist && reqOptions['nonce'] ? reqOptions['nonce'] : D[1].toString(36);
     } else {
       var byteArrayToLong = function(/*byte[]*/byteArray) {
         var value = 0;
@@ -639,7 +666,7 @@ OIDC.login = function(reqOptions) {
     var idTokenClaims = {};
     var userInfoClaims = {};
 
-    if(reqOptions) {
+    if(reqOptionsExist) {
       if(reqOptions['response_type']) {
         var parts = reqOptions['response_type'].split(' ');
         var temp = [];
@@ -841,41 +868,42 @@ OIDC.rsaVerifyJWS = function (jws, jwk)
 /**
  * Get the ID Token from the current page URL whose signature is verified and contents validated
  * against the configuration data set via {@link OIDC.setProviderInfo} and {@link OIDC.setClientInfo}
+ * @param {object} [validationOptions]  - Optional validation options. See {@link OIDC.supportedValidationOptions}
  * @returns {string|null}
  * @throws {OidcException}
  */
-OIDC.getValidIdToken = function()
+OIDC.getValidIdToken = function(validationOptions)
 {
     try {
         var url = window.location.href;
 
         // Check if there was an error parameter
-        var error = url.match('[?&]error=([^&]*)')
+        var error = url.match('[?&]error=([^&]*)');
         if (error) {
           // If so, extract the error description and display it
           var description = url.match('[?&]error_description=([^&]*)');
           throw new OidcException(error[1] + ' Description: ' + description[1]);
         }
-        // Exract state from the state parameter
-        var smatch = url.match('[?&]state=([^&]*)');
-        if (smatch) {
-          var state = smatch[1] ;
-          var sstate = sessionStorage['state'];
-          var badstate = (state != sstate);
-        }
+
+        // Extract state from the state parameter
+        var customValidatorExists = validationOptions && validationOptions['validator'] && typeof validationOptions['validator'] === 'function';
+        var urlState = OIDC.getState();
+        var storedState = sessionStorage['state'];
+        var goodState = customValidatorExists ? validationOptions.validator(urlState, storedState) : urlState === storedState;
 
         // Extract id token from the id_token parameter
         var match = url.match('[?#&]id_token=([^&]*)');
-        if (badstate) {
-          throw new OidcException("State mismatch");
+        if (!goodState) {
+          throw new OidcException('State mismatch');
         } else if (match) {
           var id_token = match[1]; // String captured by ([^&]*)
 
           if (id_token) {
             var sigVerified = this.verifyIdTokenSig(id_token);
             var valid = this.isValidIdToken(id_token);
-            if(sigVerified && valid)
-            return id_token;
+            if (sigVerified && valid) {
+              return id_token;
+            }
           } else {
             throw new OidcException('Could not retrieve ID Token from the URL');
           }
@@ -888,6 +916,26 @@ OIDC.getValidIdToken = function()
     }
 };
 
+/**
+ * Get State from the current page URL
+ * @returns {string|null} State
+ */
+OIDC.getState = function()
+{
+  try {
+    var url = window.location.href;
+    var smatch = url.match('[?&]state=([^&]*)');
+    if (smatch && smatch[1]) {
+      return decodeURIComponent(smatch[1]);
+    } else {
+      console.error(new Error('No State parameter found on current page URL!'));
+      return null;
+    }
+  } catch (e) {
+    throw new OidcException('Unable to get the State from the current page URL: ' + e.toString());
+    return null;
+  }
+}
 
 /**
  * Get Access Token from the current page URL
@@ -1123,7 +1171,7 @@ OIDC.getUserInfo = function(access_token)
        */
       request.open('POST', providerInfo['userinfo_endpoint'], false);
       request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-   
+
       request.setRequestHeader("authorization", "Bearer " + access_token);
       request.send(null);
 
