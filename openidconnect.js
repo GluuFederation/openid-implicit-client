@@ -924,7 +924,7 @@ OIDC.getState = function()
 {
   try {
     var url = window.location.href;
-    var smatch = url.match('[?&]state=([^&]*)');
+    var smatch = url.match('[?#&]state=([^&]*)');
     if (smatch && smatch[1]) {
       return decodeURIComponent(smatch[1]);
     } else {
