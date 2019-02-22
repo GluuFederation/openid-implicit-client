@@ -14,7 +14,7 @@ To use this library, include the `openidconnect.js` your HTML page.
 * In the callback page, callback.html, you will get ID Token back,
 so that you can put it into the cookie to handle the session.
 
-A full tutorial on how to use this library on a Single Page App is available in [Gluu Docs](https://gluu.org/docs/ce/integration/oauth-js-implicit/).
+A full tutorial on how to use this library on a Single Page App is available in [Gluu Docs](https://gluu.org/docs/ce/integration/spa/oauth-js-implicit/).
 
 ---
 
